@@ -1,0 +1,326 @@
+{% extends "base.html" %}
+{% block title %}<title>数据概览</title>{% endblock %}
+{% block main %}            
+<!-- Cards -->
+<div class="dashboard-card">
+    <div class="row mt-3">
+        <h4>概览</h4>
+        <div class="col-md-3 col-sm-3">
+            <div class="dashboard-card text-center bg-jobs">
+                <div class="row align-items-center">
+    <div class="col">
+        <h6>已布置作业</h6>
+        <h3>{{jobs_num}}个</h3>
+    </div>
+    <div class="col">
+      
+      <a href="/job"><i class="bi bi-file-earmark-text " style="font-size: 2rem; color: #86ca8b"></i></a>
+      
+    </div>
+      
+  </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-3">
+            <div class="dashboard-card text-center bg-classes">
+                <div class="row align-items-center">
+    <div class="col">
+        <h6>任教班级</h6>
+        <h3>{{classes_num}}个 </h3>
+    </div>
+    <div class="col">
+      
+      <a href="/manage/classes"><i class="bi bi-building" style="font-size: 2rem; color: #ffb02d"></i></a>
+      
+    </div>
+      
+  </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-3">
+            <div class="dashboard-card text-center bg-students">
+                <div class="row align-items-center">
+        <div class="col">
+            <h6>作业得分率</h6>
+            <h3>{{rank_rate| round(2)}}%</h3>
+          </div>
+          <div class="col">        
+            <a href="/job/job_analyse"><i class="bi bi-bar-chart-fill " style="font-size: 2rem; color:  #65b8f5"></i>  </a>     
+          </div>      
+        </div>    
+              </div>
+            
+        </div>
+        <div class="col-md-3 col-sm-3">
+            <div class="dashboard-card text-center bg-attendances">
+  <div class="row align-items-center">
+    <div class="col">
+        <h6>今天请假：</h6>
+        <h3>{{leave_num}}</h3>
+    </div>
+    <div class="col">
+      
+      <a href="/attendance"><i class="bi bi-people" style="font-size: 2rem; color: #c177cc"></i></a>
+      
+    </div>
+      
+  </div>
+    
+            </div>
+          </div>
+    </div>
+</div>
+
+<!-- Charts and tables -->
+<div class="row">
+    <div class="col-md-9">
+        <div class="card  bg-white" style="height: 400px;">
+            <div class="card-header">
+                <div class="row align-items-between">
+                  <div class="col-md-6">
+                    <h5><strong>各班作业对比</strong></h5>
+                  </div>
+                  <div class="col-md-3">
+                  </div>
+                  <div class="col-md-3">
+                    <select class="form-select" id="class-select" >
+                      <option selected value="7">近7天</option> 
+                      <option value="14">近14天</option>
+                      <option value="30">近30天</option>
+                    </select>
+                  </div>
+
+                </div>
+                
+            </div>
+            <div class="card-body" id="bar" style="width: 100%; height: 100%; align-self: center;">
+                <!-- Insert your chart here -->
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card  bg-white" style="height: 400px;">
+            <div class="card-header">
+                <div class="row align-items-between">
+                  <div class="col">
+                    <h5><strong>作业未完成</strong></h5>
+                  </div>
+                  
+                  <div class="col">
+                    <select class="form-select" id="student-select" >
+                      <option selected value="7">近7天</option> 
+                      <option value="14">近14天</option>
+                      <option value="30">近30天</option>
+                    </select>
+                  </div>
+                </div>
+                
+            </div>
+            <div class="card-body" >
+                <!-- Insert your chart here -->
+                <ul class="list-group" id="tabled">
+                   
+                   
+                </ul>
+                
+            </div>
+        </div>
+    </div>
+</div>
+<br>
+<div class="row">
+</div>
+<div class="row">
+    <div class="col-md-6">
+        <div class="card bg-white">
+             <div class="card-header">
+                <div class="row align-items-between">
+                  <div class="col">
+                    <h5>明星学生</h5>
+                  </div>
+                  
+                  <div class="col">
+                    <select class="form-select" id="star-select" >
+                      <option selected value="7">近7天</option> 
+                      <option value="14">近14天</option>
+                      <option value="30">近30天</option>
+                    </select>
+                  </div>
+                </div>
+                
+            </div>
+            <div class="card-body">
+                
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th scope="col">姓名</th>
+                            <th scope="col">学号</th>
+                            
+                            <th scope="col">得分率</th>
+                            
+                        </tr>
+                    </thead>
+                    <tbody id="stars">
+                   
+                        
+                       
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card bg-white">
+            <div class="card-body">
+                <h5>近期需关注的作业</h5>
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th scope="col">作业名</th>
+                            <th scope="col">班级</th>
+                            <th scope="col">平均得分率</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {%for i in jobs %}
+                        <tr>
+                            <td><a href="/job/job_info/{{i.job.id}}">{{i.job.job_name}}</a></td>
+                            <td>{{i.classes.class_name}}</td>
+                            <td>{{i.average/i.job.total1*100|round(2)}}</td>
+                        </tr>
+                        {%endfor%}
+                <button class="btn btn-light w-100 mt-3" onclick="document.location = '/job/'">查看全部</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="/static/build/js/jquery.min.js"></script>
+<script src="/static/build/js/echarts.min.js"></script>
+<script>
+//页面载入时运行
+$(document).ready(function () {
+        //获取当前时间
+        
+        get_bar_chart(7);
+        get_star(7);
+        get_unfinished_job(7);
+    });
+
+    //定义获取柱状图的函数
+    function get_bar_chart(n) {
+        showLoadingIndicator("#bar"),
+        $.ajax({
+            url: "/job/class_job_comparision/",
+            type: "POST",
+            
+            data: {
+                "days":n
+                
+            },
+            headers: {
+                'X-CSRFToken': "{{ csrf_token() }}"
+            },
+            success: function (data) {
+                $("#bar").html(data);
+                hideLoadingIndicator("#bar");
+            }
+        })
+    }
+    function get_unfinished_job(n) {
+         showLoadingIndicator("#tabled"),
+        $.ajax({
+            url: "/job/get_unfinish_job/",
+            type: "POST",
+            data: {
+                "days":n
+                
+            },
+            headers: {
+                'X-CSRFToken': "{{ csrf_token() }}"
+            },
+           
+            success: function (data) {
+                //将后台返回的字典，依次填充到table中
+                let tabled = $("#tabled");
+                tabled.empty();
+                  $.each(data, function(key, value) {
+                let row = ` <li class="list-group-item d-flex justify-content-between align-items-center">
+                        ${key}
+                        <span class="badge bg-primary rounded-pill">${value}</span>
+                    </li>
+                </div>`;
+                tabled.append(row);
+            })
+            hideLoadingIndicator("#tabled");
+            }
+        })
+    }    
+//处理选择器class-select的change事件
+    $("#class-select").change(function () {
+        //获取选择器的值
+        days = $("#class-select").val();
+       
+        //获取前days天的日期
+        get_bar_chart(days);
+    })
+//处理选择器student-select的change事件
+    $("#student-select").change(function () {
+        //获取选择器的值
+        days = $("#student-select").val();
+        
+       
+        get_unfinished_job(days);
+    })
+    function showLoadingIndicator(selector) {
+        $(selector).append('<div class="spinner-border text-primary" role="status"><span class="visually-hidden"></span></div>');
+    }
+
+    function hideLoadingIndicator(selector) {
+        $(selector).find('.spinner-border').remove();
+    }
+//处理star-select的change事件
+    $("#star-select").change(function () {
+        //获取选择器的值
+        days = $("#star-select").val();
+        
+        get_star(days);
+        
+        
+    })
+function get_star(n) {
+    let stars = $("#stars");
+    stars.empty();
+    showLoadingIndicator("#stars");
+
+    $.ajax({
+        url: "/star/" + n + "/",
+        type: "GET",
+        success: function(data) {
+           data=JSON.parse(data)
+        //将后台返回的查询结果列表，依次填充到table中
+         for (let i = 0; i < data.length; i++) {
+           
+           
+            let row = `<tr>
+                        <td><img src="/static/faces/${data[i].id}.jpg" alt="" class="rounded-circle" style="width: 30px;">${data[i].realname}</td>
+                        <td>${data[i].number}</td>
+                        //保留两位小数
+                        <td>${data[i].average_score_rate.toFixed(2)}</td>
+                       
+                    </tr>`;
+                stars.append(row);
+        }
+           
+               
+           
+            hideLoadingIndicator("#stars");
+        },
+        error: function(xhr, status, error) {
+            console.error("Error occurred while fetching stars:", error);
+        }
+    });
+}
+
+</script>
+{% endblock %}

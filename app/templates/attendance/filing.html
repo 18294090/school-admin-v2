@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block title%}<title>请假管理</title>{% endblock %}
+{% block main%}
+<div class="container">
+    <div class="row">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header">
+                <h4>{{name}}的<strong>请假记录</strong></h4>
+            </div>
+            <div class="card-body">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>请假理由</th>
+                            <th>开始时间</th>
+                            <th>结束时间</th>
+                            <th>状态</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in records %}
+                        <tr>
+                            <td>{{record.reason}}</td>
+                            <td>{{record.start_time}}</td>
+                            <td>{{record.end_time}}</td>
+                            <td>{{record.status}}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer text-muted">
+                请假记录仅供参考
+            </div>
+        </div>
+    </div>
+
+        <div class="col-md-4">
+
+            <div class="card shadow">
+                <div class="card-header">
+                    <h4><strong>新的申请</strong></h4>
+                    {{className}} <strong>{{name}}</strong>
+                </div>
+                <div class="card-body">
+                
+                    <form role="form"   action="/attendance/filing" method="POST">
+                            {{form.csrf_token}}
+                                <div class="mb-3">
+                                <label for="start_time" class="form-label">请假类型</label>             
+                                    <select class="form-control" name="type_"  required>
+                                    <option value="离校">离校</option>
+                                    <option value="跑操请假">跑操请假</option>
+                                    <option value="体育课请假">体育课请假</option>
+                                    
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                <label for="start_time" class="form-label">请输入请假理由</label>
+                                <select class="form-control" name="reason" id="reason" required>
+                                <option value="家中有事">家中有事</option>
+                                <option value="病假">病假</option>
+                                <option value="家长带出">家长带出</option>
+                                <option value="其他">其他</option>
+                                </select>
+                                <input type="text" class="form-control" id="other" style="display:none" name="other">
+                            </div>
+                            <div class="mb-3">
+                                <label for="start_time" class="form-label">请输入开始时间</label>
+                                <input type="datetime-local" name="start_time" class="form-control" id="start_time" required>
+                                
+                            </div>
+                            <div class="mb-3">
+                                <label for="end_time" class="form-label">请输入结束时间</label>
+                                <input type="datetime-local" name="end_time" class="form-control" id="end_time" required >
+                                
+                            </div>
+                            <button type="submit" class="btn btn-primary">提交</button>
+                     </form>
+                    
+                </div>
+                <div class="card-footer text-muted">
+                    请假申请提交后，请联系班主任老师审批
+                </div>
+            </div>
+        </div>
+        
+    </div>
+</div>
+<script>
+    //当输入start_time时 检测start_time是否小于现在
+    var start_time = document.getElementById("start_time");
+    start_time.addEventListener("change", function() {
+        var now = new Date();
+        var now = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes(), 0);
+        var inputTime = new Date(start_time.value);
+        inputTime = new Date(inputTime.getFullYear(), inputTime.getMonth(), inputTime.getDate(), inputTime.getHours(), inputTime.getMinutes(), 0);
+        
+        if (inputTime < now) {
+            alert("开始时间不能早于现在");
+            start_time.value = "";
+        }
+    });
+
+    //当输入end_time时 检测end_time是否小于start_time
+    var end_time = document.getElementById("end_time");
+    end_time.addEventListener("change", function() {
+        if (end_time.value < start_time.value) {
+            alert("结束时间不能早于开始时间");
+            end_time.value = start_time.value;
+        }
+    });
+   //当reason选择其他时，选择框变为输入框
+    var reason = document.getElementById("reason");
+    reason.addEventListener("change", function() {
+        if (reason.value == "其他") {
+            document.getElementById("other").style.display = "block";
+            document.getElementById("other").focus();
+            //隐藏reason
+            document.getElementById("reason").style.display = "none";
+        } else {
+            document.getElementById("other").style.display = "none";
+        }
+    });
+//other失去焦点时，隐藏other
+    document.getElementById("other").addEventListener("blur", function() {
+        document.getElementById("other").style.display = "none";
+        document.getElementById("reason").style.display = "block";
+    })
+</script>
+{% endblock %}
+

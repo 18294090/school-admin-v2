@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% block title %}
+    <title>网页标题</title>
+    {% endblock %}
+    {{ bootstrap.load_css() }}
+    {{ bootstrap.load_js() }}
+    <link rel="stylesheet" href={{ url_for("static", filename="bootstrap-icons-1.10.5/font/bootstrap-icons.css") }}>
+    <link rel="shortcut icon" href="{{ url_for('static', filename='picture/favicon.ico') }}">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f9fafb;
+            color: #343a40;
+            margin: 0;
+            padding: 0;
+            height: 100vh; /* Make sure the body takes up the full height */
+        }
+        .container-fluid {
+            height: 100vh; /* Ensure the container takes up the full height */
+        }
+        .sidebar {
+            height: 100vh;
+            background-color: #343a40;
+            padding-top: 20px;
+            border-right: 1px solid #ddd;
+            position: fixed;
+        }
+        .sidebar a {
+            font-size: 14px;
+            color: #adb5bd;
+            padding: 10px 20px;
+            display: block;
+            text-decoration: none;
+        }
+        .sidebar a.active, .sidebar a:hover {
+            background-color: #495057;
+            color: #fff;
+            border-radius: 0 25px 25px 0;
+        }
+        .main-content {
+            margin-left: 220px; /* Adjust this value to match the sidebar width */
+            padding: 20px;
+        }
+        .dashboard-card {
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            background-color: #fff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .dashboard-card h6, .dashboard-card h3 {
+            margin: 5px 0;
+        }
+        .dashboard-card h6 {
+            font-size: 1rem;
+        }
+        .dashboard-card h3 {
+            font-size: 2rem;
+        }
+        .chart-card, .student-chart-card {
+            height: 250px;
+            margin-bottom: 20px;
+        }
+        .topbar {
+            background-color: #fff;
+            padding: 15px 20px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .topbar .search-bar {
+            max-width: 400px;
+        }
+        .topbar .user-info {
+            display: flex;
+            align-items: center;
+        }
+        .topbar .user-info img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        .bg-students {
+            background-color: #cfe9fc;
+        }
+        .bg-attendances {
+            background-color: #f3e5f5;
+        }
+        .bg-jobs {
+            background-color: #e8f5e9;
+        }
+        .bg-classes {
+            background-color: #fff3e0;
+        }
+        @media (max-width: 768px) {
+            .sidebar {
+                display: none;
+            }
+            .topbar {
+                padding: 10px;
+            }
+            .main-content {
+                padding: 10px;
+            }
+            .dashboard-card {
+                padding: 10px;
+            }
+            .menu-icon {
+                display: block;
+                font-size: 24px;
+                cursor: pointer;
+            }
+            .dropdown-menu {
+                position: static;
+                float: none;
+                width: 100%;
+                margin-top: 10px;
+                box-shadow: none;
+            }
+        }
+        @media (min-width: 769px) {
+            .menu-icon {
+                display: none;
+            }
+        }
+          .dropdown-menu {
+            max-height: 300px;
+            overflow-y: auto;
+            width: 300px;
+        }
+        .dropdown-item:hover {
+            background-color: #f0f0f0;
+        }
+        .message-title {
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .message-date {
+            font-size: 12px;
+            color: #888;
+        }
+        .message-body {
+            font-size: 13px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <nav class="col-md-2 d-none d-md-block sidebar">
+            <div class="position-sticky">
+                <a class="navbar-brand mt-1" href="#"><img src="/static/picture/favicon.ico" alt="Logo" style="max-height: 30px;"></a>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/index"><i class="bi bi-house"></i> 主页</a>
+                    </li>
+                    {%if current_user.role.has_permission(Permission.publish_job)%}
+                    <li class="nav-item">
+                        <a class="nav-link" href="/job"><i class="bi bi-file-earmark-text"></i> 作业管理</a>
+                    </li>
+                    {%endif%}
+                    {%if current_user.role.has_permission(Permission.create_class)%}
+                    <li class="nav-item">
+                        <a class="nav-link" href="/manage/classes"><i class="bi bi-building"></i> 我的班级</a>
+                    </li>
+                    {%endif%}
+                    {%if current_user.role.has_permission(Permission.attendance_management)%}
+                    <li class="nav-item">
+                        <a class="nav-link" href="/attendance"><i class="bi bi-clipboard"></i> 学生出勤管理</a>
+                    </li>
+                    {%endif%}
+                    {%if current_user.role.role=="student"%}
+                    <li class="nav-item">
+                        <a class="nav-link" href="/attendance/filing"><i class="bi bi-file-earmark-text"></i> 请假</a>
+                    </li>
+                    {%endif%}
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Main content -->
+        <main class="col-md-10 ms-sm-auto col-lg-10 main-content">
+            <!-- Topbar -->
+            {% block topbar %}
+            <div class="topbar">
+                <div class="d-md-none">
+                    <span class="menu-icon" data-bs-toggle="dropdown"><i class="bi bi-list"></i></span>
+                    <ul class="dropdown-menu">
+                        <li class="nav-item">
+                        <a class="nav-link" href="/index"><i class="bi bi-house"></i> 主页</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/job"><i class="bi bi-file-earmark-text"></i> 作业管理</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/manage/classes"><i class="bi bi-building"></i> 我的班级</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/attendance"><i class="bi bi-clipboard"></i> 学生出勤管理</a>
+                    </li>
+                    </ul>
+                </div>
+                {%if current_user.role.role=="teacher"%}<div>{%if current_user.school%}{{current_user.school.school_name}}{%else%}<a href="{{url_for('auth.join_school')}}">选择学校</a>{%endif%}</div>
+                <div><h5>{{current_user.subject}}</h5></div>{%endif%}
+                {%if current_user.role.role=="student"%}<div>{{current_user.attending_classes[0].class_info.grade.school.school_name}}</div>{%endif%}
+                <div class="user-info">                   
+                    {% if msg %}
+                    <div class="dropdown">
+            <a class="dropdown-toggle" href="#" role="button" id="messagesDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-envelope"></i>
+               {{ msg|length }}
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="messagesDropdown" id="messagesMenu">
+                {% for message in msg %}
+                {% if message is not none %}
+                <li>
+                    <a class="dropdown-item" onclick="readMessage({{message.id}})">
+                        <div class="d-flex justify-content-between">
+                            <span class="message-title">{{ message.title }}</span>
+                            <span class="message-date">{{ message.time }}</span>
+                        </div>
+                        <div class="message-body">{{ message.content }}</div>
+                    </a>
+                </li>
+                {% endif %}
+                {% endfor %}
+                {% if msg|length == 0 %}
+                <li>
+                    <a class="dropdown-item text-center" href="#">No new messages</a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+                    {% endif %}
+                    {%if current_user.avatar%}
+                    <img src="/{{current_user.avatar}}" alt="User Avatar" style="border-radius: 50%;">
+                    {%endif%}
+                    <div class="dropdown">
+                        <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
+                            {{ current_user.realname or current_user.username }}
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+                            <li><a class="dropdown-item" href="#">个人信息</a></li>
+                            <li><a class="dropdown-item" href="{{url_for('auth.get_face')}}">采集头像</a></li>
+                            <li><a class="dropdown-item" href="{{url_for('auth.logout')}}">登出</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <br>
+            {%with messages = get_flashed_messages()%}
+            {%if messages%}
+            {%for message in messages%}
+            <div class="alert alert-warning alert-dismissible" role="alert">
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                {{ message }}
+            </div>
+            {%endfor%}
+            {%endif%}
+            {%endwith%}
+            {% endblock %}
+            {% block main %}
+            <!-- Add your main content here -->
+            {% endblock %}
+            <div class="modal fade" tabindex="-1" id="msgModal">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header bg-primary text-white">
+                            <h5 class="modal-title" id="msgtitle">Modal title</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p id="msgcontent"></p>
+                        </div>
+                        <div class="modal-footer" id="msgfooter">
+                        
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        </main>
+    </div>
+</div>
+
+
+<script >
+    function readMessage(id){
+        if (id === null || id === undefined) {
+            console.error('Invalid message ID');
+            return;
+        }        
+        $("#msgModal").modal("show")
+        //ajax读取消息
+        $.ajax({
+            url:"/message/read/",
+            type:"POST",
+            data:{
+                "id":id,
+                "csrf_token":'{{csrf_token()}}'
+            },
+            success:function(data){
+                if (data ) {
+                    $("#msgtitle").empty();
+                    let title=`<span class='message-title'>${data.title}</span>
+                            <span class='message-date'>${data.time}</span>`;
+                    $("#msgtitle").append(title);
+                    $("#msgcontent").empty().text(data.content);
+                    if (data.message_type == 3 || data.message_type == 5) 
+                    {//添加同意和拒绝按钮
+                        $("#msgfooter").empty();
+                        let footer=`<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                        <button type="button" class="btn btn-primary" onclick="agree(${id})">同意</button>
+                        <button type="button" class="btn btn-primary" onclick="refuse(${id})">拒绝</button>`;
+                        $("#msgfooter").append(footer);
+                    }                    
+                } else {
+                    console.error('Invalid response from server');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error reading message: ' + error);
+            }
+        }).fail(function(jqXHR, textStatus, errorThrown) {
+            console.error('Error reading message: ' + errorThrown);
+        });
+    }
+   function agree(id){
+    //ajax同意
+    $.ajax({
+        url: "/message/agree/",
+        type: "POST",
+        data: {
+            "id": id,
+            "csrf_token": '{{ csrf_token() }}'
+        },
+        success: function(data) {
+            if (data.status === 'ok') {
+                window.location.reload();
+            } else {
+                console.error('Error: ' + data.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('AJAX Error: ' + status + ' - ' + error);
+        }
+    });
+}
+
+    function refuse(id){
+        //ajax拒绝
+        $.ajax({
+            url:"/message/refuse/",
+            type:"POST",
+            data:{
+                "id":id,
+                "csrf_token":'{{csrf_token()}}'
+            },
+            success:function(data){
+                if (data ) {
+                   
+                    window.location.reload();
+                } else {
+                    console.error('Invalid response from server');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error reading message: ' + error);
+            }
+        }).fail(function(jqXHR, textStatus, errorThrown) {
+            console.error('Error reading message: ' + errorThrown);
+        });
+    }
+</script>
+
+</body>
+</html>

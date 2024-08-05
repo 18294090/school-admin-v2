@@ -1,0 +1,390 @@
+{% extends "base.html" %}
+{%block title%}
+<title>{{class_name}} 作业《{{dict["name"]}}》详情</title>
+{%endblock%} 
+{% block main%}
+<script src={{url_for('static',filename="build/js/echarts.min.js")}}></script>
+<div class="modal" id = myModal tabindex="-1" id="myModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">        
+      </div>
+      <div class="modal-footer">
+       <label for="btn-group">评分</label>
+      <div class="btn-group btn-group" role="group" id='btn-group'>
+      </div> 
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>        
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid ">
+      <nav id="navbar-example2" class="navbar bg-body-tertiary px-3 fixed-bottom bg-dark" data-bs-theme="dark">
+        <a class="navbar-brand text-white" href="#" id="back-to-top">回到页首</a>
+        <ul class="nav nav-pills">        
+          <li class="nav-item">
+            <a class="nav-link" href="#scrollspyHeading1">各班统计对比图</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#scrollspyHeading2">班级学生作业详情</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#scrollspyHeading3">各小题答题统计</a>
+          </li>
+        </ul>
+      </nav>
+      <div data-bs-spy="scroll" data-bs-target="#navbar-example2" data-bs-root-margin="0px 0px -40%" data-bs-smooth-scroll="true" class="scrollspy-example bg-body-tertiary p-3 rounded-2" tabindex="0">
+        <!--以下为bootstrap card-->
+        <div class="row">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header"><h5>各班对比</h5></div>
+                <div class="card-body chart-card" id="bar" style="width: 100%; height: 300px; align-self: center;">
+                    <div id="myChart" style="width: 100%; height: 100%;">{{charts|safe}}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow">
+              <div class="card-header ">
+              <div class="row align-items-center">
+                  <div class="col">
+                    <h5 >作业质量分布</h5>
+                  </div>
+                  <div class="col">
+                    <select class="form-select" id="class2-select">
+                      <option value="0">全校</option>
+                      {% for cls in classes_ %}
+                      <option value="{{ cls.classes.id }}">{{ cls.classes.class_name}}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+              </div>
+              </div>
+                <div class="card-body chart-card"  style="width: 100%; height: 300px; align-self: center;">
+                  <div id="pie" style="width: 100%; height: 100%;"></div>
+                </div>
+            </div>
+        </div>
+    </div>  
+        <br> 
+        <div class="card shadow" id="scrollspyHeading2">
+          <div class="card-header" >
+          <div class="row">
+            
+            <div class="col-2" >
+               <label for="class-select" style="align-items: center;justify-content: center;">选择班级:</label>
+              <select class="form-select" id="class-select">
+                  {% for cls in classes_ %}
+                      <option value="{{ cls.classes.id }}">{{ cls.classes.class_name }}</option>
+                  {% endfor %}
+              </select>
+            </div>
+            
+            <div class="col-2">
+              <label for="mod">选择模式:</label>
+              <select class="form-select" id="mod">       
+                      <option value="0">排名模式</option>
+                      <option value="1">防作弊模式</option>       
+              </select>
+            </div>
+
+            <div class="col-8 d-flex align-items-center justify-content-center" id="infor">
+              <span class=" d-flex p-2 bg-primary text-white"> 《{{dict["name"]}}》 <small>未交：{{dict.n_sub}}人| 作业总分：{{dict["sum"]}}   | 平均分：{%if j_c.average%}{{j_c.average|round(2)}}{%endif%}| 最高分：{{j_c.max}} | 最低分：{{j_c.min}} | 平均得分率：{%if j_c.average%}{{(j_c.average/dict["sum"]*100)|round(2)  }}{%else%}0{%endif%}%</small></span>
+            </div>
+          </div>
+          </div>
+          <div class="card-body" id="showStaus">
+            <!--带有水平和垂直滚动条的表格，当表格内容超出页面内容时，出现滚动条,单元格内容水平显示-->
+              <div class="table-responsive"  style="height: 100vh; overflow: auto;">
+                <table class="table table-striped table-bordered" id="table">
+                    <thead>
+                        <tr>
+                            <th style="position: sticky; top: 0; background: white;white-space: nowrap;text-align: center;">
+                                序号
+                            </th>
+                            <th style="position: sticky; top: 0; background: white;white-space: nowrap;text-align: center;">
+                                学号
+                            </th>
+                            <th style="position: sticky; top: 0; background: white;white-space: nowrap;text-align: center;">
+                                姓名
+                            </th>
+                            <th style="position: sticky; top: 0; background: white;white-space: nowrap;text-align: center;">
+                                总分
+                            </th>
+                            <th style="position: sticky; top: 0; background: white;">
+                                填空
+                            </th>
+                            <th style="position: sticky; top: 0; background: white;white-space: nowrap;text-align: center;">
+                                选择
+                            </th>
+                            {%for i in dict['select'].keys()%}
+                            <th style="position: sticky; top: 0; background: white;">{{i}}</th>
+                            {%endfor%}
+                            {%for i in dict['no_select'].keys()%}
+                            <th style="position: sticky; top: 0; background: gray;">{{i}}</th>
+                            {%endfor%}               
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {%for key,value in js.items()%}
+                        <tr>
+                            <td>
+                              {{ loop.index}}
+                            </td>
+                            <td style="text-align: center;white-space: nowrap;">
+                              <a href="{{ "/job/show_student_card/%s_%s" % (dict["id"], value['id']) }} " target="_blank">{{value['number']}}</a>
+                            </td>
+                            <td style="text-align: center;white-space: nowrap;">
+                            {{value['name']}}
+                            </td>
+                            <td>
+                              {%if value['mark']!=None%}{{value['mark']}}{%endif%}
+                            </td>
+                             <td>
+                                {%if value['complete_mark']!=None%}{{value['complete_mark']}}{%endif%}
+                            </td>
+                            <td>
+                                {%if value['select_mark']!=None%}{{value['select_mark']}}{%endif%}
+                            </td>   
+                            {%for j in dict['select'].keys()%}                            
+                            <td {%if value[j]==dict['select'][j]%}style="background-color: #8aff8a;"{%elif not value[j]%}{%else%}style="background-color: #ff6868;"{%endif%}>{%if value[j]%}{{value[j]}}{%endif%}
+                            </td>
+                            {%endfor%}
+                            {%for j in dict['no_select'].keys()%}                          
+                            <td onclick="showAnswer('{{value['number']}}',{{j}})" style="{%if value[j] != None%}{%if value[j]/dict['no_select'][j]["分值"]>0.9%}background-color: #8aff8a;{%elif value[j]/dict['no_select'][j]["分值"]>0.6%}background-color: #fffa68;{%elif value[j]/dict['no_select'][j]["分值"]>0.3%}background-color: #ff9a68;{%else%}background-color: #ff6868;{%endif%}{%endif%}">{%if value[j]%}{{value[j]}}{%endif%}
+                            </td>
+                            {%endfor%} 
+                        </tr>
+                        {%endfor%}
+                    </tbody>
+                </table>
+              </div>
+              
+          </div>
+        </div>
+        <br>
+        <div class="card shadow">
+        <div id="heatmap" class="card-body" >
+
+              {{heat|safe}}
+              </div>
+        </div>
+        <br>
+      <div class="card shadow" id="scrollspyHeading3">
+        <div class="card-header">
+          <div class="row g-4 align-items-center" >
+              <div class="col-1">
+                  <label for="select">选择班级:</label>
+              </div>
+              <div class="col-1">
+                  <select class="form-select" id="class1-select">
+                  <option value="0">全校</option>
+                  {% for cls in classes_ %}
+                  <option value="{{ cls.classes.id }}">{{ cls.classes.class_name}}</option>
+                  {% endfor %}
+                  </select>
+              </div>
+              <div class="col-md-10" ></div>
+          </div>
+        </div>
+        <div class="card-body">               
+            <div class="row" id="bar_charts" style="width:100;height:auto"></div>
+        </div>
+        <div class="card-footer">
+          <div class="row" style="height:200">            
+          </div>
+        </div>
+
+</div>
+<script src="/static/build/js/jquery.min.js"></script>
+
+<script>
+ function set_mark(id,m){//设置主观题分数
+        //获取单选框的值
+        var title_number=$("input[name='cpl_number']:checked").val();        
+        data={"id":id,"mark":m}
+        var csrf_token="{{csrf_token()}}";
+        
+        $.ajax({
+                url: "/job/set_cpl_mark/",    // 提交到controller的url路径 
+                headers:{"X-CSRFToken":csrf_token},             //提交给flask后台必须有csrf认证
+                type: "POST",    // 提交方式
+                contentType: 'application/json; charset=UTF-8', //提交数据类型
+                data: JSON.stringify(data),  // data为String类型，必须为 Key/Value 格式。
+                dataType: "json",    // 服务器端返回的数据类型
+                success: function (data) {    // 请求成功后的回调函数，其中的参数data为controller返回的map,也就是说,@ResponseBody将返回的map转化为JSON格式的数据，然后通过data这个参数取JSON数据中的值    
+                    window.location.reload();
+                },
+                error:function (error) {
+                 
+                alert(error);}
+            });
+    } 
+
+//发送ajax请求获取答案图片，函数showAnswer参数为学号和题号，类型为字符串
+function showAnswer(stu,question){
+  csrf_token="{{ csrf_token() }}";
+  $("#myModal").modal("show");
+  $(".modal-title").empty();
+  $(".modal-body").empty();
+  showLoadingIndicator(".modal-body");
+  //使用ajax,向job/cpl_judge/发送请求获取答案图片
+    $.ajax({
+                url: "/job/cpl_judge/",    // 提交到controller的url路径 
+                headers:{"X-CSRFToken":csrf_token},             //提交给flask后台必须有csrf认证
+                type: "POST",    // 提交方式                
+                data: {'id':{{dict["id"]}},
+                        'stu':stu,
+                        'title_number':question},  // data为String类型，必须为 Key/Value 格式。                
+                success: function (response, status, xhr) { 
+                                       
+                    var img = $("<img>").attr("src", "data:image/png;base64," + response.image);
+                    img.attr("class","img-fluid") 
+                    img.attr("alt","Image")
+                    $(".modal-body").empty();
+                    $(".modal-body").append(img);
+                   
+                    $(".modal-title").append("姓名："+response.name+"  题号："+question);
+                     $("#btn-group").empty();
+                    for(var i=0;i<Number(response.mark)+1;i++){
+                    var btn=$("<button>").text(i);
+                    btn.attr("class",'btn btn-primary')
+                    btn.attr("onclick","set_mark("+response.id+","+String(i)+")")
+                    $("#btn-group").append(btn);
+                    }
+                   },
+                error: function(xhr, status, error) { console.log("Error: " + error); }     
+            });
+hideLoadingIndicator(".modal-body"); 
+} 
+// 显示加载指示器
+function showLoadingIndicator(selector) {
+  $(selector).append('载入中，请稍候...<div class="spinner-border text-primary" role="status"><span class="visually-hidden"></span></div>');
+}
+
+// 隐藏加载指示器
+function hideLoadingIndicator(selector) {
+  $(selector).find('.spinner-border').remove();
+}
+
+$(document).ready(function() {
+
+    // 页面载入时获取初始数据
+    getData();
+    get_pie({{dict["id"]}});
+    // 监听班级下拉框变化事件
+    
+});
+
+
+$("#class-select").change(function(event) {
+  gettable()
+        });
+$("#class2-select").change(function(event) {
+  var class_id = $("#class-select").val();  
+  
+  get_pie({{dict["id"]}},class_id)
+        });
+$("#mod").change(function(event) {
+  gettable()
+});
+  function gettable(){         
+        // 获取选中的班级ID
+        var class_id = $("#class-select").val();
+        var mod=$("#mod").val();
+        //清空表格
+        $("#table").empty();
+        showLoadingIndicator("#table");
+        // 发送ajax请求
+        $.ajax({
+            type: "POST",
+            url: "/job/job_info/{{dict["id"]}}",
+            data: {
+                class_id: class_id,
+                job_id:{{dict["id"]}},
+                mod:mod,
+                'csrf_token':'{{ csrf_token() }}',
+            },
+            success: function(response) {
+                hideLoadingIndicator("#table");
+                 $("#table").html($(response).find("#table").html());
+                 $("#infor").html($(response).find("#infor").html());
+                  $("#heatmap").html($(response).find("#heatmap").html());
+
+            },
+            error: function(error) {
+                console.log(error);
+            }
+        });}
+document.getElementById("back-to-top").addEventListener("click", function(event) {
+    event.preventDefault(); // 阻止默认的链接行为
+    window.scrollTo({ top: 0, behavior: "smooth" }); // 平滑滚动到顶部
+  }); 
+function get_pie(job_id,class_id){
+    showLoadingIndicator("#pie")
+    $.ajax({
+    type:"POST",
+    url:"/job/get_pie/",
+    data:{
+      "id":job_id,
+      "class_id":class_id,
+      'csrf_token':'{{ csrf_token() }}',
+        },
+    success: function(data) {
+      hideLoadingIndicator("#pie");
+      $("#pie").empty();
+      //将pyecharts图表渲染到pie中
+      $('#pie').html(data);
+    }
+    })
+
+  
+}
+$("#class1-select").on("change", function() {
+        getData();
+    });
+function getData() {
+    // 获取选中的班级ID
+    var class_id = $("#class1-select").val();
+    $("#bar_charts").empty();
+    showLoadingIndicator("#bar_charts");
+    // 发送ajax请求
+    $.ajax({
+        type: "POST",
+        url: "/job/question_statistics/",
+        data: {
+            job_id:{{dict["id"]}},
+            class_id: class_id,
+            'csrf_token':'{{ csrf_token() }}',
+        },
+        success: function (data) {
+            hideLoadingIndicator("#bar_charts");
+              $('#bar_charts').empty();
+                var barHtmlList=JSON.parse(data)
+                for (var i = 0; i < barHtmlList.length; i++) {
+                    var barHtml = barHtmlList[i];
+                    var $div = $("<div ></div>").addClass('col-md-2').appendTo($('#bar_charts'));
+                    $div.html(barHtml);
+    }  
+        window.addEventListener('resize', function() {
+          var parents= document.getElementsByClassName("col-md");
+            for(i = 0;i<parents.length;i++){        
+                var chart = echarts.getInstanceByDom(parents[i]);                    
+                chart.resize();
+                }
+  });
+        },
+            error: function (xhr, status, error) {
+            console.error(error);
+            }
+            });
+}
+
+</script>
+{%endblock%}

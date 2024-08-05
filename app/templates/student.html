@@ -1,0 +1,387 @@
+{% extends "base.html" %}
+{% block title %}<title>{{realname}}个人中心</title>{% endblock %}
+{% block main %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card card-shadow">
+                <div class="card-header">
+                    <div class="row align-items-between">
+                        <div class="col-md-6">
+                            <h3 class="card-title">请假统计</h3>
+                        </div>
+                        <div class="col-md-3"></div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="attendance-select">
+                                <option selected value="7">近7天</option>
+                                <option value="14">近14天</option>
+                                <option value="30">近30天</option>
+                                <option value="3600">全部</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body" id="attendance" style="width: 100%; height: 400px;"></div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-shadow">
+                <div class="card-header">
+                    <div class="row align-items-between">
+                        <div class="col-md-6">
+                            <h3 class="card-title">请假理由</h3>
+                        </div>
+                        <div class="col-md-3"></div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="reason-select">
+                                <option selected value="7">近7天</option>
+                                <option value="14">近14天</option>
+                                <option value="30">近30天</option>
+                                <option value="3600">全部</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body" id="reason" style="width: 100%; height: 400px;"></div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-shadow">
+                <div class="card-header">
+                    <div class="row align-items-between">
+                        <div class="col-md-6">
+                            <h3 class="card-title">重点关注的作业</h3>
+                        </div>
+                        <div class="col-md-3"></div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="attention-select">
+                                <option selected value="7">近7天</option>
+                                <option value="14">近14天</option>
+                                <option value="30">近30天</option>
+                                <option value="3600">全部</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body" id="important-job" style="width: 100%; height: 400px;">
+                    <table class="table table-striped" id="important-job-table">
+                        <thead>
+                            <tr>
+                                <th>作业名称</th>
+                                <th>学科</th>
+                                <th>提交时间</th>
+                                <th>选择题得分</th>
+                                <th>客观题得分</th>
+                                <th>得分率</th>
+                            </tr>
+                        </thead>
+                        <tbody id="important-job-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-shadow">
+                <div class="card-header">
+                    <h3 class="card-title">未交作业</h3>
+                </div>
+                <div class="card-body">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>作业名称</th>
+                                <th>学科</th>
+                                <th>提交</th>
+                            </tr>
+                        </thead>
+                        <tbody id="unfinished-job"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <br>
+    <div class="row">
+        <div class="col-md-9">
+            <div class="card card-shadow">
+                <div class="card-header">
+                    <div class="row align-items-between">
+                        <div class="col-md-6">
+                            <h3 class="card-title">作业得分率</h3>
+                        </div>
+                        <div class="col-md-3"></div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="rate-select">
+                                <option selected value="7">近7天</option>
+                                <option value="14">近14天</option>
+                                <option value="30">近30天</option>
+                                <option value="3600">全部</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body" id="rate" style="width: 100%; height: 400px;"></div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-shadow">
+                <div class="card-header">
+                    <div class="row align-items-between">
+                        <div class="col-md-6">
+                            <h3 class="card-title">各科能力对比</h3>
+                        </div>
+                        <div class="col-md-3"></div>
+                        <div class="col-md-3"></div>
+                    </div>
+                </div>
+                <div class="card-body" id="compare" style="width: 100%; height: 400px;"></div>
+            </div>
+        </div>
+    </div>
+    <br>
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card card-shadow">
+                <div class="card-header">
+                    <div class="row align-items-between">
+                        <div class="col-md-6">
+                            <h3 class="card-title">所有作业</h3>
+                        </div>
+                        <div class="col-md-6 d-flex justify-content-end">
+                            <ul class="list-group list-group-horizontal">
+                                <li class="list-group-item d-flex justify-content-between align-items-center" onclick="get_jobs('全部')">
+                                    全部
+                                    <span class="badge bg-primary rounded-pill">{{num}}</span>
+                                </li>
+                                {% for record in subjects_info %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center" onclick="get_jobs('{{record[0]}}')">
+                                    {{record[0]}}
+                                    <span class="badge bg-primary rounded-pill">{{record[1]}}</span>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>作业名称</th>
+                                <th>学科</th>
+                                <th>提交时间</th>
+                                <th>选择题得分</th>
+                                <th>客观题得分</th>
+                                <th>得分率</th>
+                            </tr>
+                        </thead>
+                        <tbody id="jobs"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="/static/build/js/jquery.min.js"></script>
+<script src="/static/build/js/echarts.min.js"></script>
+<script>
+function showLoadingIndicator(selector) {
+    $(selector).append('<div class="spinner-border text-primary" role="status"><span class="visually-hidden"></span></div>');
+}
+function hideLoadingIndicator(selector) {
+    $(selector).find('.spinner-border').remove();
+}
+//页面载入时运行
+$(document).ready(function () {
+        //获取当前时间
+        get_personal_attendance(7);
+        get_subject_compare();
+        get_important_job(7);        
+        get_rate(7);        
+        get_jobs("全部");
+        get_unfinished_job(7);
+        get_reason(7);
+    });
+function get_personal_attendance(days) {
+    showLoadingIndicator("#attendance");
+    $.ajax({
+        url: "/attendance/personal_attendance",
+        type: "GET",
+        data: {
+            days: days,
+            user_id:{{user_id}}
+        },
+        success: function (data) {
+            //将前端返回的柱形图数据渲染到id 为attendance的card-body中
+            $("#attendance").html(data);
+            hideLoadingIndicator("#attendance");
+        }
+    })
+}
+//attendance-select添加change事件
+$("#attendance-select").on("change", function () {
+    get_personal_attendance(this.value);
+})
+function get_subject_compare(days) {
+    showLoadingIndicator("#compare");
+    $.ajax({
+        url: "/job/student_subject_compare",
+        type: "GET",
+        data: {            
+            user_id:{{user_id}}
+        },
+        success: function (data) {
+            //将前端返回的柱形图数据渲染到id 为的card-body中
+            $("#compare").html(data);
+            hideLoadingIndicator("#compare");
+        }
+    })
+}
+$("#compare-select").on("change", function () {
+    get_subject_compare(this.value);
+})
+function get_important_job(days) {
+     $("#important-job-tbody").empty();
+    showLoadingIndicator("#important-job");
+    $.ajax({
+        url: "/job/student_important_job",
+        type: "GET",
+        data: {
+            days: days,
+            user_id:{{user_id}}
+        },
+        success: function (data) {    
+            // 填充表格新数据
+                    $.each(data,function(index,item){          
+                        var row = $("<tr></tr>");
+                        row.append($("<td></td>").text(item.name));
+                        row.append($("<td></td>").text(item.subject));
+                        row.append($("<td></td>").text(item.submit_time));
+                        row.append($("<td></td>").text(item.select_mark));
+                        row.append($("<td></td>").text(item.complete_mark));
+                        row.append($("<td></td>").text(item.rate));
+                        $("#important-job-tbody").append(row);
+                    });
+            hideLoadingIndicator("#important-job");
+        }
+    })
+}
+$("#attention-select").on("change", function () {
+    get_important_job(this.value);
+})
+
+function get_rate(days) {
+    showLoadingIndicator("#rate");
+    $.ajax({
+        url: "/job/student_jobs_rate",
+        type: "GET",
+        data: {
+            days: days,
+            user_id:{{user_id}}
+        },
+        success: function (data) {
+            //将前端返回的柱形图数据渲染到id 为rate的card-body中
+            $("#rate").html(data);
+            hideLoadingIndicator("#rate");
+        }
+    })
+}
+$("#rate-select").on("change", function () {
+    get_rate(this.value);
+})
+function get_reason(days) {
+    showLoadingIndicator("#reason");
+    $.ajax({
+        url: "/attendance//personal_attendance_wordcloud",
+        type: "GET",
+        data: {
+            user_id:{{user_id}},
+            days: days
+
+        },
+        success: function (data) {
+            //将前端返回的柱形图数据渲染到id 为rate的card-body中
+            $("#reason").html(data);
+            hideLoadingIndicator("#reason");
+        }
+    })
+}
+$("#reason-select").on("change", function () {
+    get_reason( this.value);
+})
+function get_jobs(subject) {
+    $("#jobs").empty();
+    showLoadingIndicator("#jobs");
+    $.ajax({
+        url: "/job/student_jobs",
+        type: "GET",
+        data: {
+            user_id:{{user_id}},
+            subject:subject
+        },
+        success: function (data) {
+            if (data.status=="success"){
+            //将前端返回的柱形图数据渲染到id 为rate的card-body中
+            $.each(data.data,function(index,item){
+                var row = $("<tr></tr>");
+                row.append($("<td></td>").text(item.name));
+                row.append($("<td></td>").text(item.subject));
+                row.append($("<td></td>").text(item.submit_time));
+                row.append($("<td></td>").text(item.select_mark));
+                row.append($("<td></td>").text(item.complete_mark));
+                row.append($("<td></td>").text(item.rate));
+                $("#jobs").append(row);
+            });
+            hideLoadingIndicator("#jobs");}
+        }
+    })
+}
+function get_unfinished_job(days) {
+    if (days === null) {
+        alert("请输入要查询的天数");
+        return;
+    }
+    showLoadingIndicator("#unfinished-job");
+    $.ajax({
+        url: "/job/student_unfinished_job",
+        type: "GET",
+        data: {
+            days: days,
+            user_id:{{user_id}}
+        },
+        success: function (data) {
+            if (data === null) {
+                alert("服务器返回数据为空");
+                return;
+            }
+            if (data.data === null) {
+                alert("服务器返回的数据data为空");
+                return;
+            }
+            //将前端返回的柱形图数据渲染到id 为rate的card-body中
+           $.each(data.data,function(index,item){
+                if (item === null) {
+                    alert("服务器返回的数据data中有空对象");
+                    return;
+                }
+                var row = $("<tr></tr>");
+                row.append($("<td></td>").text(item.name));
+                row.append($("<td></td>").text(item.subject));                
+                var button2 = $("<button>").text("采集");
+                button2.addClass("btn btn-primary btn-sm");
+                button2.attr("onclick", "window.location.href='/job/GetCardFromCamera/" + item.id + "'");
+                row.append($("<td></td>").append(button2));
+                $("#unfinished-job").append(row);
+           })
+            hideLoadingIndicator("#unfinished-job");
+        },
+        error: function (xhr, status, error) {
+            alert("服务器错误:" + error);
+        }
+    })
+}
+$("#unfinished-job-select").on("change", function () {
+    get_unfinished_job(this.value);
+})
+</script>
+{% endblock %}

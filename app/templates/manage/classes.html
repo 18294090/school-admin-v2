@@ -1,0 +1,376 @@
+{% extends "base.html" %}
+{% block title %}<title>我的班级</title>{% endblock %}
+{% block main %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3>班级管理</h3>
+        <div class="btn-group">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#joinClassModal">
+                <i class="bi bi-microsoft-teams"></i> 加入现有班级
+            </button>
+            <button type="button" class="btn btn-secondary" onclick="document.location = '/manage/create_class'">
+                <i class="bi bi-plus-circle"></i> 创建新班级
+            </button>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-striped-columns table-bordered text-center align-middle">
+            <thead class="table-primary">
+                <tr>
+                    <th>班级名称</th>
+                    <th>班主任</th>
+                    <th>人数</th>
+                    <th>类型</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for class in classes %}
+                <tr>
+                    <td>{{ class[0] }}</td>
+                    <td>{{ class[1] }}</td>
+                    <td>{{ class[2] }}</td>
+                    <td>{{ class[3] }}</td>
+                    <td>
+                        <button type="button" class="btn btn-primary" onclick="document.location = '/manage/class/{{ class[5] }}'">
+                            <i class="bi bi-pencil-square"></i> 查看详情
+                        </button>
+                        {% if current_user.id == class[4] %}
+                        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#inviteTeacherModal" onclick="inviteTeacher('{{ class[5] }}')">
+                            <i class="bi bi-person-plus"></i> 邀请教师
+                        </button>
+                        <button type="button" class="btn btn-danger" onclick="document.location = '/manage/delete_class/{{ class[5] }}'">
+                            <i class="bi bi-trash"></i> 解散班级
+                        </button>
+                        <button type="button" class="btn btn-info " data-bs-toggle="modal" data-bs-target="#inviteStudentModal" onclick="get_modal('{{ class[5] }}')">
+                            <i class="bi bi-person-plus"></i> 添加学生
+                        </button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Invite Teacher Modal -->
+    <div class="modal fade" id="inviteTeacherModal" tabindex="-1" aria-labelledby="inviteTeacherModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="inviteTeacherModalLabel">邀请任课教师</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="inviteTeacherForm">
+                        <div class="mb-3">
+                            <label for="subject" class="form-label">请选择学科</label>
+                            <select class="form-select" id="subject" required>
+                                <option selected>选择学科</option>
+                                {% for i in subjects %}
+                                <option value="{{ i }}">{{ i }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="teacher" class="form-label">选择老师</label>
+                            <i class="bi bi-question-circle" style="color: #001124" data-bs-toggle="tooltip" data-bs-placement="top" title="只能选择已经加入了相同学校的老师，若没有加入学校，请扫描二维码加入"></i>
+                            <select class="form-select" id="teacher" required></select>
+                        </div>
+                        <div class="mb-4 text-center" id="qrcode"></div>
+                        <button type="submit" class="btn btn-primary">发送邀请</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invite Student Modal -->
+    <div class="modal fade" id="inviteStudentModal" tabindex="-1" aria-labelledby="inviteStudentModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="inviteStudentModalLabel">导入新增学生信息</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="file">导入学生名单</label>
+                        <input type="file" class="form-control" id="file" name="file" required accept=".csv, .xlsx, .xls" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <a href="/download/add_students.xlsx" download class="bi bi-download">下载学生名单模板</a>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="upload">导入</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Join Class Modal -->
+    <div class="modal fade" id="joinClassModal" tabindex="-1" aria-labelledby="joinClassModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="joinClassModalLabel">加入班级</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="joinClassForm">
+                        <div class="mb-3">
+                            <label for="gradeSelect" class="form-label">选择年级</label>
+                            <select class="form-select" id="gradeSelect" required>
+                                <option selected>选择年级</option>
+                                {% for grade in all_grades %}
+                                <option value="{{ grade.id }}">{{ grade.grade_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="classSelect" class="form-label">选择班级</label>
+                            <select class="form-select" id="classSelect" required>
+                                <option selected>选择班级</option>
+                                
+                            </select>
+                        </div>
+                      
+                        <button type="btn" class="btn btn-primary" onclick="sendMessage()">发送申请</button>  
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='build/js/jquery.min.js') }}"></script>
+    <script>
+       
+        // 处理邀请教师功能
+        var subject = document.getElementById('subject');
+        var teachers = document.getElementById('teacher');
+        let class_id;
+
+        function inviteTeacher(id) {
+            class_id = id;
+        }
+
+        subject.addEventListener('change', () => {
+            const selectedSubject = subject.value;
+            if (!subject || !subject.value) {
+                console.error('Subject is null or empty');
+                return;
+            }
+            if (!class_id) {
+                console.error('Class ID is null or undefined');
+                return;
+            }
+            const msg =  class_id + '|' + selectedSubject;
+            fetch('/manage/get_qrcode', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{csrf_token() }}'
+                },
+                body: JSON.stringify({ msg: msg })
+            })
+            .then(response => {
+
+                return response.json();
+            })
+            .then(data => {
+                const qrcode = document.getElementById('qrcode');
+                qrcode.innerHTML = '';
+                // 显示 base64 图片
+                qrcode.innerHTML = `<img src="data:image/png;base64,${data}" style="width: 200px; height: 200px;">`;
+            })
+            .catch(error => console.error(error));
+
+            fetch('/manage/get_teachers', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{csrf_token() }}'
+                },
+                body: JSON.stringify({ subject: selectedSubject })
+            })
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                return response.json();
+            })
+            .then(data => {
+                teachers.innerHTML = '';
+                data.forEach((teacher) => {
+                    const option = document.createElement('option');
+                    option.value = teacher[1];
+                    option.textContent = teacher[0];
+                    teachers.appendChild(option);
+                });
+            })
+            .catch(error => console.error(error));
+        });
+
+        document.getElementById('inviteTeacherForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const selectedTeacher = teachers.value;
+            fetch('/manage/invite_teacher', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{csrf_token() }}'
+                },
+                body: JSON.stringify({ class_id: class_id, teacher: selectedTeacher })
+            })
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                window.location.reload();
+            })
+            .catch(error => console.error(error));
+        });
+
+        function showLoadingIndicator(selector) {
+            const loadingIndicator = document.createElement("div");
+            loadingIndicator.classList.add("loading-indicator");
+            $(selector).append(loadingIndicator);
+        }
+
+        function hideLoadingIndicator(selector) {
+            $(selector).find(".loading-indicator").remove();
+        }
+
+        function import_students(class_id) {
+            if (class_id == null) {
+                console.error('class_id is null');
+                return;
+            }
+
+            showLoadingIndicator('#inviteStudentModal');
+
+            const file = document.getElementById('file').files[0];
+            if (file == null) {
+                console.error('File is null');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('class_id', class_id);
+            formData.append('csrf_token', '{{ csrf_token() }}');  // 这里将 CSRF 令牌添加到表单数据中
+
+            fetch('/manage/import_students', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                const modal = document.getElementById('inviteStudentModal');
+                if (modal == null) {
+                    console.error('Modal is null');
+                    return;
+                }
+                bootstrap.Modal.getInstance(modal).hide();
+                document.getElementById('file').value = null;
+                // 重载当前页面
+                location.reload();
+            })
+            .catch(error => {
+                console.error('Error importing students:', error);
+            });
+        }
+
+        function get_modal(class_id) {
+            if (class_id == null) {
+                console.error('class_id is null');
+                return;
+            }
+
+            const button = document.getElementById('upload');
+            if (button == null) {
+                console.error('Button is null');
+                return;
+            }
+
+            button.onclick = () => import_students(class_id);
+        }
+        //当选择年级后，向后台获取该年级下所有班级，并显示在下拉框classSelect中
+        document.getElementById('gradeSelect').addEventListener('change', function() {
+            const selectedGrade = this.value;
+            if (selectedGrade == null || selectedGrade === '') {
+                console.error('Grade is null or empty');
+                return;
+            }
+
+            fetch('/manage/get_classes', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{csrf_token() }}'
+                },
+                body: JSON.stringify({ grade: selectedGrade })
+            })
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                return response.json();
+            })
+            .then(data => {
+                const classSelect = document.getElementById('classSelect');
+                classSelect.innerHTML = '';
+                data.forEach((item) => {
+                    const option = document.createElement('option');
+                    option.value = item[1];
+                    option.textContent = item[0];
+                    classSelect.appendChild(option);
+                });
+            })
+            .catch(error => console.error(error));
+        });
+        //当点击加入班级按钮时，向后台发送加入班级请求
+function sendMessage() {
+    const classSelect = document.getElementById('classSelect');
+    if (classSelect == null) {
+        console.error('Class select is null');
+        return;
+    }
+
+    const classId = classSelect.value;
+    if (classId == null || classId === '') {
+        console.error('Class ID is null or empty');
+        return;
+    }
+
+    const userId = {{ current_user.id }};
+    if (userId == null) {
+        console.error('User ID is null');
+        return;
+    }
+
+    const subject = '{{ current_user.subject }}';
+    if (subject == null) {
+        console.error('Subject is null');
+        return;
+    }
+
+    fetch('/message/apply_to_teach/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ class_id: classId, sender: userId, subject: subject })
+    })
+    .then(response => {
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        return response.json();
+    })
+    .then(data => {
+        if (data.status === 'ok') {
+            console.log(data);
+            window.location.reload();
+        } else {
+            alert(data.message);
+        }
+    })
+    .catch(error => console.error(error));
+}
+
+    </script>
+{% endblock %}

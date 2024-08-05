@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}<title>创建班级</title>{% endblock %}
+{% block main %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header " style="display: flex; justify-content: start;">
+                    <h3 >创建班级</h3><i class="bi bi-question-circle" style="color: #001124" data-bs-toggle="tooltip" data-bs-placement="top" title="请输入班级信息创建班级"></i>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('manage.create_class') }}" method="post" onsubmit="return validateForm()" enctype="multipart/form-data">
+                        <div class="form-group">
+                            <label for="class_type">班级类型</label>
+                            <span><i class="bi bi-question-circle" style="color: #001124" data-bs-toggle="tooltip" data-bs-placement="top" title="普通班级选择行政班，若为选修课班级或走班课，请选择专业班，并选择专业"></i></span>
+                            <select class="form-select" name="class_type" id="class_type" required>
+                                <option selected disabled value="">选择班级类型</option>
+                                <option value="行政班">行政班</option>
+                                <option value="专业班">专业班</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="grade">选择年级</label>
+                            <select class="form-select" name="grade" required>
+                                <option selected disabled value="">选择年级</option>
+                                {% for i in grades %}
+                                <option value="{{ i }}">{{ i }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="classname">班级番号</label>
+                            <select class="form-select" name="classname" required>
+                                <option selected disabled value="">选择番号</option>
+                                {% for i in range(1, 20) %}
+                                <option value="{{ i }}">{{ i }}班</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="file">导入学生名单</label>
+                            <input type="file" class="form-control" id="file" name="file" required accept=".csv, .xlsx, .xls" />
+                        </div>
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                        <button type="submit" class="btn btn-primary">提交</button>
+                    </form>
+                </div>
+                <div class="card-footer text-muted " >
+                <a href="/download/add_students.xlsx" download class="bi bi-download">下载学生名单模板</a>
+                
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="/static/build/js/jquery.min.js"></script>
+<script>
+    // 初始化工具提示
+    document.addEventListener('DOMContentLoaded', function() {
+        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+        const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+    });
+
+    // 显示/隐藏专业选择框
+   
+
+    // 表单验证
+    function validateForm() {
+        const selects = document.querySelectorAll('select');
+        for (let i = 0; i < selects.length; i++) {
+            if (selects[i].required && (selects[i].value === "" || selects[i].value === "选择班级类型" || selects[i].value === "选择年级" || selects[i].value === "选择专业" || selects[i].value === "选择番号")) {
+                alert("请选择" + selects[i].options[0].text);
+                return false;
+            }
+        }
+        return true;
+    }
+</script>
+{% endblock %}

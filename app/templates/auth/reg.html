@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"> 
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>注册账号</title>
+    {{bootstrap.load_css() }}
+    <link rel="shortcut icon" href="{{ url_for('static', filename='picture/favicon.ico') }}">
+</head>
+<body>
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-lg rounded">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="card-title">注册账号</h5>
+                </div>
+                <div class="card-body">
+                    {%from 'bootstrap5/utils.html' import render_messages%}
+                <div  class="mb-3" id="error-message" style="color: crimson;">{{render_messages()}}</div>
+                <form method="post">
+                    <input type="hidden" name="csrf_token" value="{{csrf_token()}}">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">用户名</label>
+                        <input type="text" class="form-control" id="username" name="username" placeholder="输入用户名" required>
+                        <small class="form-text text-muted">设置一个长度不小于五位的用户名，必须以字母开头，只能包含字母数字和下划线</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="school" class="form-label">学校</label>
+                        <input type="text" class="form-control" id="school" name="school" placeholder="输入学校名称"  onchange="fetchSuggestions()" required>
+                        <ul id="suggestions-list"></ul>
+                    </div>
+                        <div class="mb-3">
+                        <label for="subject" class="form-label">任教学科</label>
+                        <select class="form-select" aria-label="Default select example" name="subject">
+                            <option selected>选择学科</option>
+                            {%for i in subject%}
+                            <option value="{{i}}">{{i}}</option>
+                            {%endfor%}
+                        </select>                            
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">密码</label>
+                        <input type="password" class="form-control" id="password" name="password" placeholder="设置密码" required>
+                        <small class="form-text text-muted">密码由数字，字母和特殊符号中的至少两种组成</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="confirm_password" class="form-label">确认密码</label>
+                        <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder="确认密码" required>
+                        <small class="form-text text-muted">两次输入的密码必须一致</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="phone_number" class="form-label">电话号码</label>
+                        <input type="tel" class="form-control" id="phone_number" name="phone_number" placeholder="输入电话号码" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">提交</button>
+                </form>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+</div>  
+<script>
+    var usernameInput = document.getElementById("username");
+    
+    var passwordInput = document.getElementById("password");
+    var confirmPasswordInput = document.getElementById("confirm_password");
+    var phoneNumberInput = document.getElementById("phone_number");
+    var submitButton = document.querySelector("button[type='submit']");
+    
+    function checkUsernameValidity() {
+        var usernamePattern = /^[A-Za-z][A-Za-z0-9_]{4,}$/;
+        if (!usernamePattern.test(usernameInput.value)) {
+            showError("请仔细检查用户名格式");
+            return false;
+        }
+        return true;
+    }
+    
+    function checkPasswordValidity() {
+        var passwordPattern = /^(?=.*[a-zA-Z])(?=.*[\d!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,}$/;
+        if (!passwordPattern.test(passwordInput.value)) {
+            showError("密码必须包含至少两种类型（字母、数字和特殊字符）且长度不少于8位。");
+            return false;
+        }
+        return true;
+    }
+    
+    function checkConfirmPasswordValidity() {
+        if (confirmPasswordInput.value !== passwordInput.value) {
+            showError("两次输入的密码不一致");
+            return false;
+        }
+        return true;
+    }
+    
+    function checkPhoneNumberValidity() {
+        var phoneNumberPattern = /^\d{11}$/;
+        if (!phoneNumberPattern.test(phoneNumberInput.value)) {
+            showError("请输入正确的手机号码");
+            return false;
+        }
+        return true;
+    }
+submitButton.addEventListener('click', function(event) {
+    if (!checkUsernameValidity() || !checkPasswordValidity() || !checkConfirmPasswordValidity() || !checkPhoneNumberValidity() || !validateIdNumber(idNumberInput.value)) {
+        event.preventDefault(); // 阻止表单提交
+    }
+});
+
+
+        function showError(message) {
+    document.getElementById('error-message').innerText = message;
+}
+
+function clearError() {
+    document.getElementById('error-message').innerText = '';
+}
+
+submitButton.addEventListener('click', function(event) {
+    if (!checkUsernameValidity() || !checkPasswordValidity() || !checkConfirmPasswordValidity() || !checkPhoneNumberValidity() || !validateIdNumber(idNumberInput.value)) {
+        event.preventDefault(); // 阻止表单提交
+    }
+});
+
+// 在密码框失去焦点时进行密码强度检查
+passwordInput.addEventListener('blur', function() {
+    checkPasswordValidity();
+});
+
+// 在电话号码框失去焦点时进行电话号码格式验证
+phoneNumberInput.addEventListener('blur', function() {
+    checkPhoneNumberValidity();
+});
+
+// When the school input changes, fetch school data from the backend for user selection
+function fetchSuggestions() {
+    const input = document.getElementById('school').value;
+    const additionalParam = 'school';  // 另一个要传递的参数
+
+    if (input.length < 2) {
+        // 输入内容少于2个字符时不发送请求
+        document.getElementById('suggestions-list').innerHTML = '';
+        return;
+    }
+
+    fetch(`/autocomplete?q=${input}&type=${additionalParam}`)
+        .then(response => response.json())
+        .then(data => {
+            const suggestionsList = document.getElementById('suggestions-list');
+            suggestionsList.innerHTML = '';
+            data.forEach(item => {
+                const li = document.createElement('li');
+                li.textContent = item;
+                //调整字体颜色为淡黑色
+                li.style.color = "gray";
+                li.onclick = () => selectSuggestion(item);
+                suggestionsList.appendChild(li);
+            });
+        
+        })
+        .catch(error => console.error('Error fetching suggestions:', error));
+}
+function selectSuggestion(suggestion) {
+    const input = document.getElementById('school');
+    input.value = suggestion;
+    document.getElementById('suggestions-list').innerHTML = '';
+}
+
+</script>
+</body>
+</html>

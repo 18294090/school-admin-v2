@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+{%block head%}
+{%block title%}<title>阅卷报告</title>{%endblock%}     
+{%endblock%}
+{% block main%}
+<div class="container-fluid">
+    <div class="d-flex align-items-center d-none" id="spinners" >
+
+<strong id="tips"></strong>
+<div class="spinner-grow spinner-grow-sm ms-auto  text-secondary" role="status" aria-hidden="true"></div>
+<div class="spinner-grow spinner-grow-sm ms-auto  text-primary" role="status" aria-hidden="true"></div>
+<div class="spinner-grow spinner-grow-sm ms-auto  text-success" role="status" aria-hidden="true"></div>
+<div class="spinner-grow spinner-grow-sm ms-auto  text-info" role="status" aria-hidden="true"></div>
+<div class="spinner-grow spinner-grow-sm ms-auto  text-light" role="status" aria-hidden="true"></div>
+</div>
+    <!--以下为阅卷报告，在card上显示-->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-title"><h4 style="text-align:center">阅卷报告</h4> </div>
+                <div class="card-body">
+                    <div class="row">
+                    <div class="col"><h6 style="color:#9e9e9e">作业名称：</h6><h4><strong id="name"></strong></h4></div>
+                        <div class="col"><h6 style="color:#9e9e9e">最近(五分钟)阅卷份数：</h6><h4><strong id="s_num"></strong></h4></div>
+                    <div class="col"><h6 style="color:#9e9e9e">最后一次阅卷时间：</h6><h4><strong id="time"></strong></h4></div> 
+                        
+                    </div>
+                    <div class="row">
+                        <div class="col"><h6 style="color:#9e9e9e">总共阅卷：</h6><h4><strong id="t_num"></strong></h4></div>
+                        <div class="col"><h6 style="color:#9e9e9e">异常卷：</h6><h4><strong id="d_num"></strong></h4></p></div>    
+                        <div class="col"><h6 style="color:#9e9e9e">最后一次提交者：</h6><h4><strong id="stu"></strong></h4></div>
+                    </div>
+                    <div class="row">
+                    
+                    <div class="col-4">
+                        <div class="input-group">
+                            <input type="file" class="form-control" id="inputGroupFile{{id}}" aria-describedby="inputGroupFileAddon04" aria-label="Upload" multiple accept=".png,.jpg,.bmp">
+                            <button class=" btn btn-outline-primary" type="button" id="inputGroupFileAddon04" onclick="upload_paper({{id}})">继续上传答卷</button>
+                        </div>
+                        <div class="col-8"></div>
+                    </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+       
+    </div>
+    <!--以下为异常卷列表-->
+    <br>
+    <div class="row">
+        <div class="col-md-12">
+        <div class="card shadow">
+            <div class="card-body">
+                <table class="table table-striped" style="text-align:center">
+                    <thead class="table-primary">
+                        <tr>
+                            <th>序号</th>
+                            <th>异常原因</th>
+                            <th>提交时间</th>
+                            <th>试卷</th>
+                            <th>学号</th>
+                            <th>处理</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody">
+                    </tbody>
+                </table>
+            </div>
+        </div>    
+        </div>
+    </div>
+</div>
+<script src="/static/build/js/jquery.min.js"></script>
+<script> 
+//页面载入时运行
+    $(document).ready(function(){
+                var id={{id}};
+                //将后台传来的jsonify化的字典数据转化为js字典
+                var data=JSON.parse('{{data|tojson|safe}}');
+                refresh_table(data,id);
+            }
+        );
+    function refresh_table(data,id){
+        var s_num=document.getElementById("s_num");
+        var d_num=document.getElementById("d_num");
+        var t_num=document.getElementById("t_num");
+        var name=document.getElementById("name");
+        var time=document.getElementById("time")
+        var stu=document.getElementById("stu")
+        name.innerHTML=data["name"];
+        s_num.innerHTML=data["s_num"];
+        d_num.innerHTML=data["d_num"];
+        t_num.innerHTML=data["total"];
+        var timestamp = new Date(data["time"])
+        
+         var formattedTime = timestamp.getFullYear() + '-' + 
+                                    ('0' + (timestamp.getMonth() + 1)).slice(-2) + '-' + 
+                                    ('0' + timestamp.getDate()).slice(-2) + ' ' + 
+                                    ('0' + timestamp.getHours()).slice(-2) + ':' + 
+                                    ('0' + timestamp.getMinutes()).slice(-2) + ':' + 
+                                    ('0' + timestamp.getSeconds()).slice(-2)
+        time.innerHTML=formattedTime 
+        stu.innerHTML=data["stu"]
+        var tbody=document.getElementById("tbody"); 
+        tbody.innerHTML="";                   
+        for(i=0;i<data["d_num"];i++){
+            tr=document.createElement("tr");
+            td=document.createElement("td");
+            td.innerHTML=i+1;
+            tr.appendChild(td);
+            td=document.createElement("td");
+            td.innerHTML=data["d_list"][i][1];
+            tr.appendChild(td);
+            td=document.createElement("td");
+            
+            timestamp=new Date(data["d_list"][i][4]);
+            var formattedTime = timestamp.getFullYear() + '-' + 
+                                    ('0' + (timestamp.getMonth() + 1)).slice(-2) + '-' + 
+                                    ('0' + timestamp.getDate()).slice(-2) + ' ' + 
+                                    ('0' + timestamp.getHours()).slice(-2) + ':' + 
+                                    ('0' + timestamp.getMinutes()).slice(-2) + ':' + 
+                                    ('0' + timestamp.getSeconds()).slice(-2)
+            td.innerHTML=formattedTime
+            tr.appendChild(td);
+            td=document.createElement("td");
+            a=document.createElement("a");
+            a.href="/static/job/abnormal_paper/"+String(id)+"/"+String(data["d_list"][i][2]);
+            a.innerHTML=data["d_list"][i][2];
+            td.appendChild(a);
+            tr.appendChild(td);
+            td=document.createElement("td");
+            td.innerHTML=data["d_list"][i][3];
+            tr.appendChild(td); 
+            td = document.createElement("td");
+            //按钮用于处理异常卷，点击该按钮，跳转到处理异常卷的页面
+            button = document.createElement("button");
+            button.className = "btn btn-primary";
+            button.type = "button";
+            button.innerHTML = "处理";
+            var url="/job/abnormal/"+String(id)+":"+data["d_list"][i][0];
+            console.log(url);
+            //给按钮添加点击事件：点击按钮，跳转到处理异常卷的页面
+            button.onclick = (function(url) {
+                return function() {
+                    window.location.href = url;
+                };
+                })(url);//这里的url是一个参数，需要用闭包来传递，否则会出错
+            td.appendChild(button);
+            tr.appendChild(td);
+            tbody.append(tr);
+        }
+    }
+
+function upload_paper(id){
+        var file=document.getElementById("inputGroupFile"+String(id));
+        var formData =new FormData();
+        var files = file.files;
+        showSpinners("上传中，请稍候");  // 显示 Spinners  
+        for(var i=0; i<files.length; i++){
+            formData.append('files',files[i]);
+        }
+        var csrf_token="{{csrf_token()}}";
+        $.ajax({
+                url: "/job/upload/"+String(id),    // 提交到controller的url路径 
+                headers:{"X-CSRFToken":csrf_token},             //提交给flask后台必须有csrf认证
+                type: "POST",    // 提交方式               
+                data: formData,  // data为String类型，必须为 Key/Value 格式。
+                dataType: "json",    // 服务器端返回的数据类型
+                cache: false,//上传文件无需缓存
+                processData: false,//用于对data参数进行序列化处理 这里必须false
+                contentType: false, //必须
+                success: function (data) {    // 请求成功后的回调函数，其中的参数data为controller返回的map,也就是说,@ResponseBody将返回的map转化为JSON格式的数据，然后通过data这个参数取JSON数据中的值
+                    if (data) {
+                       alert(data[0]+"个文件上传成功")
+                       file.value=""
+                      
+                       hideSpinners();  // 隐藏 Spinners
+                        judge(id)
+                    } else {
+                        
+                        alert("上传失败")
+                    }
+                    
+                },
+            });
+    };
+function showSpinners(msg) {
+    $("#spinners").removeClass('d-none');
+    $("#tips").text(msg);
+    //使spinners全屏局中
+    $("#spinners").css("position", "fixed");
+    $("#spinners").css("top", "50%");
+    $("#spinners").css("left", "50%");
+    $("#spinners").css("transform", "translate(-50%, -50%)");
+    //将spinners置于最上层
+    $("#spinners").css("z-index", "9999");
+    //使网页变为灰色，不可点击，不可滚动
+    $("body").css("pointer-events", "none");
+    }
+    // 隐藏 Spinners
+    function hideSpinners() {
+    $("#spinners").addClass('d-none');
+    //使网页恢复点击和滚动
+    $("body").css("pointer-events", "auto");
+    }
+function judge(id){
+        var data={"judge":id};
+        var csrf_token="{{csrf_token()}}";
+        showSpinners("阅卷中，请稍候");  // 显示 Spinners
+        $.ajax({
+                url: "/job/judge/"+String(id),    // 提交到controller的url路径 
+                headers:{"X-CSRFToken":csrf_token},             //提交给flask后台必须有csrf认证
+                type: "POST",    // 提交方式
+                contentType: 'application/json; charset=UTF-8', //提交数据类型
+                data: JSON.stringify(data),  // data为String类型，必须为 Key/Value 格式。
+                dataType: "json",    // 服务器端返回的数据类型
+                success: function (data) {    // 请求成功后的回调函数，其中的参数data为controller返回的map,也就是说,@ResponseBody将返回的map转化为JSON格式的数据，然后通过data这个参数取JSON数据中的值
+                    hideSpinners();  // 隐藏 Spinners                                          
+                    window.location.href="/job/judge_report/"+String(id);
+                },
+                error:function (error) {
+                        hideSpinners();
+                        console.log(error);
+                        //显示 erro的responseText内容
+                    alert(error.responseText);}
+            });
+    };
+</script>
+{%endblock%}         

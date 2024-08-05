@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %} 
+<title>人脸采集</title>
+{% endblock %}
+{% block main %}
+<div class="container">
+  <div class="row mb-3">
+    <div class="col-12">
+      <h4 class="text-center">请注视摄像头，脸部不要有遮挡</h4>
+    </div>
+  </div>
+  <div class="row mb-3">
+    <div class="col-12 col-md-6">
+      <label for="videoSource">选择摄像头:</label>
+      <select class="form-select" id="videoSource" onchange="startStream()"></select>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-12 col-md-8 position-relative">
+      <video autoplay="true" id="videoElement" class="w-100" style="height: auto;"></video>
+      <!-- 拍照按钮 -->
+      <button class="btn btn-outline-secondary position-absolute bottom-10 start-50 translate-middle-x" style="border-radius: 50%; width: 60px; height: 60px;" onclick="captureImage(0,{{current_user.id}})">
+        <i class="bi bi-camera" style="font-size: 35px;"></i>
+      </button>
+    </div>
+    <div class="col-12 col-md-4">
+      <div class="card shadow mb-3"> 
+        <div class="card-header" id="prompt">识别结果</div> 
+        <div class="card-body">
+          <img id="img" src="" class="img-thumbnail" alt="采集结果">
+        </div>
+        <div class="card-footer text-muted" id="submit"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="/static/build/js/jquery.min.js"></script>
+<script>
+var video = document.querySelector('video');
+var select = document.querySelector('#videoSource');
+var canvas = document.createElement('canvas');
+var context = canvas.getContext('2d');
+
+var csrf_token = "{{ csrf_token() }}";
+
+function startStream() {
+  var constraints = {
+    video: {
+      deviceId: select.value,
+      width: { ideal: 1280 },
+      height: { ideal: 720 }
+    },
+    audio: false
+  };
+
+  navigator.mediaDevices.getUserMedia(constraints)
+    .then(function(stream) {
+      video.srcObject = stream;
+      video.onloadedmetadata = function() {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+      };
+    })
+    .catch(function(err) {
+      console.log('An error occurred: ' + err);
+    });
+}
+
+var audio = new Audio("/static/file/ding.mp3");
+
+function captureImage() { 
+  context.drawImage(video, 0, 0, canvas.width, canvas.height);
+  //显示等待提示
+  document.querySelector('#prompt').innerHTML = '正在识别中...';
+  var dataUrl = canvas.toDataURL('image/jpeg');
+  //发送数据，并获取后台返回的结果，返回结果为一个元组，第一个元素为识别结果，第二个元素为识别结果的图片
+  fetch('/auth/get_face', 
+  {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': csrf_token
+    },
+    body: JSON.stringify({ image: dataUrl })
+  }).then(response => response.json())
+  .then(data => {
+    
+    //如果data[1]中有图像，说明识别成功
+    if(data[0] == "1") {
+      document.querySelector('#img').src = 'data:image/jpeg;base64,' + data[2];
+      //生成提交按钮
+      document.querySelector('#submit').innerHTML = '<button class="btn btn-primary" onclick="saveImage(0, {{current_user.id}})">提交</button>';
+      audio.play();
+    } else {
+      document.querySelector('#img').src = '';
+    }
+
+    document.querySelector('#prompt').innerHTML = data[1];
+  });
+}
+
+window.onload = function() {
+  navigator.mediaDevices.enumerateDevices()
+    .then(function(devices) {
+      devices.forEach(function(device) {
+        if (device.kind === 'videoinput') {
+          var option = document.createElement('option');
+          option.value = device.deviceId;
+          option.text = device.label || 'camera ' + (select.length + 1);
+          select.appendChild(option);
+        }
+      });
+      select.onchange();
+    })
+    .catch(function(err) {
+      console.log('An error occurred: ' + err);
+    });
+}
+
+function saveImage(tag, id) {
+  //获取img中的图像
+  var img = document.querySelector('#img').src;
+  fetch('/auth/save_face', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': csrf_token
+    },
+    body: JSON.stringify({ image: img, id: id, tag: tag })
+  }).then(response => response.json())
+  .then(data => {
+    if (data == "success") {
+      alert("保存成功");
+      window.location.href = "/index";
+    } else {
+      alert("保存失败");
+    }
+  });
+}
+</script>
+{% endblock %}

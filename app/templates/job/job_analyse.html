@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{%block title%}<title>作业分析</title>{%endblock%}
+{%block main%}
+<link rel="stylesheet" href={{url_for("static",filename="bootstrap-icons-1.10.5/font/bootstrap-icons.css")}}>
+<div class="container-fluid">
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="start-date" class="form-label">请选择开始日期</label>
+                            <input type="date" id="start-date" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="end-date" class="form-label">请选择结束日期</label>
+                            <input type="date" id="end-date" class="form-control">
+                        </div>            
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow">
+                <div class="card-body">
+                    
+                        <label for="job_name" class="form-label">请输入作业名称</label>
+                        <input type="text" id="job_name" class="form-control">
+                   
+                </div>
+            </div>
+        </div>
+    </div>
+    <br>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-body chart-card" id="bar" style="width: 100%; height: 300px; align-self: center;">
+                    <div id="myChart" style="width: 100%; height: 100%;">{{chart|safe}}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow">
+                <div class="card-body chart-card" id="pie" style="width: 100%; height: 300px; align-self: center;">
+                </div>
+            </div>
+        </div>
+    </div>
+    <br>
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow">
+                <div class="card-header">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="class" class="form-label">请选择班级</label>
+                            <select class="form-select" id="class">
+                                <option selected value="">全部</option>
+                                {%for i in classes%}
+                                <option value="{{i.id}}">{{i.class_name}}</option>
+                                {%endfor%}
+                            </select>
+                        </div>
+                        <div class="col-md-6 d-flex justify-content-bottom" style="align-self: right;">
+                            <button type='button' class="btn btn-outline-primary  visually-hidden" id="btn1">
+                                <i class="bi-file-earmark-person" style="font-size: 1rem;"></i>查看学生详情
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer text-muted" id="line" style="width: 100%; height: 400px;">
+                    {{chart2|safe}}
+                </div>
+            </div>
+        </div>
+    </div>
+    <br><br>
+</div>
+
+<script src="/static/build/js/jquery.min.js"></script>
+<script>
+    let today = new Date();
+    today.setDate(today.getDate() + 1);
+    let todayStr = today.getFullYear() + "-" + (today.getMonth() + 1).toString().padStart(2, "0") + "-" + today.getDate().toString().padStart(2, "0");
+    document.getElementById("end-date").value = todayStr;
+    today.setDate(today.getDate() - 7);
+    todayStr = today.getFullYear() + "-" + (today.getMonth() + 1).toString().padStart(2, "0") + "-" + today.getDate().toString().padStart(2, "0");
+    document.getElementById("start-date").value = todayStr;
+
+    //ajax获取饼图
+    function get_pie() {
+        let startDate = $('#start-date').val();
+        let endDate = $('#end-date').val();
+        let id = $('#class').val();
+        let job_name = $('#job_name').val();
+        let subject="{{current_user.subject}}";
+        let csrf_token = "{{ csrf_token() }}";
+        $.ajax({
+            type: 'POST',
+            url: '/job/get_pie',
+            headers: {
+                'X-CSRFToken': csrf_token
+            },
+            data: {
+                start: startDate,
+                end: endDate,
+                subject: subject,
+                job_name: job_name
+            },
+            success: function(data) {
+                $('#pie').html(data);
+            },
+            error: function() {
+                console.log('Error retrieving data');
+            }
+        });
+    }
+    $('#start-date, #end-date,#job_name').change(function() {
+        let startDate = $('#start-date').val();
+        let endDate = $('#end-date').val();
+        let id = $('#class').val();
+        let job_name = $('#job_name').val();
+        let csrf_token = "{{ csrf_token() }}";
+        $('#bar').html("");
+        $('#line').html("");
+        showLoadingIndicator("#bar");
+        showLoadingIndicator("#line");
+        showLoadingIndicator("#pie");
+        get_pie();
+        $.ajax({
+            type: 'POST',
+            url: '/job/job_analyse',
+            headers: {
+                'X-CSRFToken': csrf_token
+            },
+            data: {
+                start: startDate,
+                end: endDate,
+                id: id,
+                job_name: job_name
+            },
+            success: function(data) {
+                hideLoadingIndicator("#bar");
+                hideLoadingIndicator("#line");
+                hideLoadingIndicator("#pie");
+                $('#bar').html($(data).find('#bar').html());
+                $('#line').html($(data).find('#line').html());
+            },
+            error: function() {
+                console.log('Error retrieving data');
+            }
+        });
+    });
+
+    $(document).on('change', "#class", function(){
+        let startDate = $('#start-date').val();
+        let endDate = $('#end-date').val();
+        let id = $('#class').val();
+        let job_name = $('#job_name').val();
+        let csrf_token = "{{ csrf_token() }}";
+        if(id == '') {
+            $('#btn1').addClass('visually-hidden');
+        } else {
+            $('#btn1').removeClass('visually-hidden');
+            $('#btn1').attr('onclick', "location.href='/manage/class/" + id + "'");
+        }
+        
+        $.ajax({
+            type: 'POST',
+            url: '/job/job_analyse',
+            headers: {
+                'X-CSRFToken': csrf_token
+            },
+            data: {
+                start: startDate,
+                end: endDate,
+                id: id,
+                job_name: job_name
+            },
+            success: function(data) {
+                $('#line').html($(data).find('#line').html());
+            },
+            error: function() {
+                console.log('Error retrieving data');
+            }
+        });
+    });
+
+    function showLoadingIndicator(selector) {
+        $(selector).append('<div class="spinner-border text-primary" role="status"><span class="visually-hidden"></span></div>');
+    }
+
+    function hideLoadingIndicator(selector) {
+        $(selector).find('.spinner-border').remove();
+    }
+
+
+//页面载入时获取饼图
+    get_pie();
+</script>
+{%endblock%}

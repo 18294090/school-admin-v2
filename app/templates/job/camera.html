@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{%block title%} <title>摄像头监视器</title>{%endblock%}
+{% block main %}
+<div class="container">
+  <div class="row">
+    <div class="col-8" >
+      <h4>请将作业：《{{name}}》置于摄像头前</h4>
+    </div>
+    <div class="col-4" >
+      <h3>识别结果</h3>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-2" >
+    <label for="videoSource">选择摄像头:</label>
+    </div>
+    <div class="col-4" >
+    <select class="form-select" id="videoSource" onchange="startStream()"></select>
+    </div>
+  </div>
+ <br>
+  <div class="row">
+    <div class="col-8" >
+    <div class="position-relative">
+    
+    <video autoplay="true" id="videoElement" style="width: 640px; height: auto;"></video>
+    </div>  
+    </div> 
+  
+    <div class="col-4" >
+      <div class="card shadow ">  
+        <div class="card-body">
+          <img src="" class="img-thumbnail" alt="识别结果"  id="img1" style="width: 100%; height: auto;">
+        </div>
+      <div class="card-footer text-muted" id="prompt">没有识别到试卷</div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="/static/build/js/jquery.min.js"></script>
+<script>
+var video = document.querySelector('video');
+var select = document.querySelector('#videoSource');
+var canvas = document.createElement('canvas');
+var context = canvas.getContext('2d');
+var intervalId = null;
+var csrf_token = "{{ csrf_token() }}";
+function createCaptureImageFunction(id) {
+  return function() {
+    captureImage(id);
+  }
+}
+function startStream() {
+  if (intervalId) {
+    clearInterval(intervalId);
+  }
+
+  var constraints = {
+    video: {
+      deviceId: select.value,
+      width: { ideal: 3500 },
+      height: { ideal: 2800 }
+    },
+    audio: false
+  };
+
+  navigator.mediaDevices.getUserMedia(constraints)
+    .then(function(stream) {
+      video.srcObject = stream;
+      video.onloadedmetadata = function() {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight; 
+        console.log(video.videoHeight,video.videoWidth);    
+        intervalId = setInterval(createCaptureImageFunction({{id}}), 2000);      
+      };
+    })
+    .catch(function(err) {
+      console.log('An error occurred: ' + err);
+    });
+}
+var audio = new Audio("/static/file/ding.mp3");
+
+var count=0 
+function captureImage(id) { 
+  context.drawImage(video, 0, 0, canvas.width, canvas.height);
+  var dataUrl = canvas.toDataURL('image/jpeg');
+  //发送数据，并获取后台返回的结果，返回结果为一个元组，第一个元素为识别结果，第二个元素为识别结果的图片
+  fetch('/job/GetCardFromCamera/'+String(id), 
+  {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': csrf_token
+    },
+    body: JSON.stringify({ image: dataUrl })
+  }).then(response => response.json())
+  .then(data => {
+    
+    //如果data[1]中有图像，说明识别成功
+    if(data[0]!=2){
+      document.querySelector('#img1').src = 'data:image/jpeg;base64,' + data[1];
+      count=0
+      if (data[0]!=3){
+          //播放音频
+
+      audio.play();
+      }
+    
+  }
+    else{
+      document.querySelector('#img1').src = '';
+      count++
+    }
+
+    document.querySelector('#prompt').innerHTML = data[2];
+    if(count==10){
+      //退出运行
+      clearInterval(intervalId);
+      video.srcObject.getTracks()[0].stop();
+      video.srcObject = null;
+      document.querySelector('#prompt').innerHTML = "长时间没有检测到试卷，停止检测，若要重新开始请刷新页面";
+      
+    }
+  });
+}
+window.onload = function() {
+  navigator.mediaDevices.enumerateDevices()
+    .then(function(devices) {
+      devices.forEach(function(device) {
+        if (device.kind === 'videoinput') {
+          var option = document.createElement('option');
+          option.value = device.deviceId;
+          option.text = device.label || 'camera ' + (select.length + 1);
+          select.appendChild(option);
+        }
+      });
+      select.onchange();
+    })
+    .catch(function(err) {
+      console.log('An error occurred: ' + err);
+    });
+}
+</script>
+{% endblock %}

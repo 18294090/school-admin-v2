@@ -1,0 +1,17 @@
+<header>
+<title>404</title>
+</header>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="alert alert-danger" role="alert">
+            错误：{{errors}}
+            {%if errors=="没有任教班级"%}。
+            请先<a href="/manage/create_class" class="bi bi-plus-circle">添加班级</a>
+            {%endif%}
+           
+            </div>
+             
+        </div>
+    </div>
+

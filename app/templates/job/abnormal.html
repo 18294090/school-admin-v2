@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{%block head%}
+{%block title%}<title>异常处理</title>{%endblock%}     
+{%endblock%}
+{%block main%}
+<div class= "container">
+    <div class= "row">
+        <div class= "col-md-12" style="text-align:center">
+            <h3>作业名称：{{job.job_name}}</h3>
+        </div>
+    </div>
+    <div class= "row">
+        <div class= "col-md-6">
+        <!--card-->
+            <div class="card shadow">
+                <div class="card-header">           
+                    <h6 class="card-title">异常原因：{{abnormal.reason}}</h6>
+                </div>
+                <div class="card-body">   
+                <!-- 异常试卷图像,图像大小适合屏幕，处理后端传来的img图像，分别将其显示出来，splits元素为使用base64得到的图像字符串-->
+                <div class="row">
+                <img class="img-responsive img-fluid" src= "data:image/jpg;base64,{{img}}" alt= "Responsive image">
+                </div>
+                </div>
+            </div>
+        </div>
+         <div class= "col-md-6">
+         <div class="accordion" id="accordionExample">
+  <div class="accordion-item">
+  {%if "学号" in abnormal.reason or "重复阅卷" in abnormal.reason%}
+        <h2 class="accordion-header" id="headingOne">
+        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+            修改学号
+        </button>
+        </h2>
+        <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionExample">
+        <div class="accordion-body">
+            <div class="input-group">
+                    <input type="text" id="inputNumber" class="form-control" placeholder="请输入正确的学号" required autofocus>
+                    <button id="submitNumber" for="inputNumber" class="btn btn-primary" onclick="modifyNumber({{abnormal.id}},'{{"abnormal_paper/"+job.id|string+"/"+abnormal.paper}}')">提交</button>
+                </div>
+        </div>
+        </div>
+        <h2 class="accordion-header" id="headingOne1">
+        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne1" aria-expanded="true" aria-controls="collapseOne">
+            检查处理
+        </button>
+        </h2>
+        <div id="collapseOne1" class="accordion-collapse collapse " aria-labelledby="headingOne" data-bs-parent="#accordionExample">
+        <div class="accordion-body">
+            <div class="input-group">
+                <button  class="btn btn-primary" onclick="get_card('{{"job_readed/"+job.id|string+"/"+abnormal.student_id|string+".png"}}')">查看已阅卷</button>
+                <button  class="btn btn-primary" onclick="super_judge('{{"abnormal_paper/"+job.id|string+"/"+abnormal.paper}}')">识别二维码并重新阅卷</button>
+             </div>
+        </div>
+        </div>
+    </div>
+    {%endif%}
+        {%if "作业任务" in abnormal.reason %}     
+    <div class="accordion-item">
+        <h2 class="accordion-header" id="headingTwo">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                分配作业任务
+        </button>
+        </h2>
+        <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#accordionExample">
+        <div class="accordion-body">
+        <button class="btn btn-primary" onclick="Assignjob('{{abnormal.id}}','{{abnormal.job_id}}','{{abnormal.student_id|string}}')">分配作业任务</button>
+        </div>
+        </div>
+    </div>
+        {%endif%}
+        {%if "二维码识别失败" in abnormal.reason or "二维码信息不匹配" in abnormal.reason %}
+    <div class="accordion-item">
+        <h2 class="accordion-header" id="headingThree">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+            Accordion Item #3
+        </button>
+        </h2>
+        <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#accordionExample">
+        <div class="accordion-body">
+            <strong>This is the third item's accordion body.</strong> It is hidden by default, until the collapse plugin adds the appropriate classes that we use to style each element. These classes control the overall appearance, as well as the showing and hiding via CSS transitions. You can modify any of this with custom CSS or overriding our default variables. It's also worth noting that just about any HTML can go within the <code>.accordion-body</code>, though the transition does limit overflow.
+        </div>
+        </div>
+    </div>
+    </div>
+        {%endif%}
+            </div>            
+        </div>
+    </div>
+</div>
+
+<script src="/static/build/js/jquery.min.js"></script>
+<script>
+function modifyNumber(id,paper){
+    number=document.getElementById("inputNumber").value;
+    csrftoken='{{csrf_token()}}';
+    console.log(paper);
+    $.ajax({
+        url:"/job/JudgeErroHanding/modifyNumber/",
+        type:"POST",
+        //csrf认证
+        headers:{"X-CSRFToken":csrftoken},
+        data:{"id":id,"paper":paper,"number":number},
+        success:function(data){
+            alert(data);
+            //跳转到judge_report界面
+            window.location.href="/job/judge_report/{{abnormal.job_id}}"
+        }
+    });
+}
+
+function Assignjob(ab_id,job_id,student_id){
+    csrftoken='{{csrf_token()}}';
+    $.ajax({
+        url:"/job/JudgeErroHanding/Assignjob/",
+        type:"POST",
+        //csrf认证
+        headers:{"X-CSRFToken":csrftoken},
+        data:{id:ab_id,"job_id":job_id,"student_id":student_id},
+        success:function(data){
+            alert(data);
+            //跳转到judge_report界面
+            window.location.href="/job/judge_report/{{abnormal.job_id}}"
+        },
+        error:function(data){
+            alert(data);
+        }
+    });
+}
+
+function get_card(url1){
+    //ajax获取base64图片
+    csrftoken='{{csrf_token()}}';
+   
+    $.ajax({
+        url:"/job/getCard/",
+        type:"POST",
+        //csrf认证
+        headers:{"X-CSRFToken":csrftoken},
+        data:{"url":url1},
+        
+        success:function(data){
+             //在card中显示图片
+            $(".img-responsive").attr("src","data:image/jpg;base64,"+data);
+            //修改submitNumber按钮的onclick事件为modifyNumber({{abnormal.id}},"url1")
+            $("#submitNumber").attr("onclick","modifyNumber({{abnormal.id}},'"+url1+"')");
+            
+        },
+        error:function(data){
+            alert(data);
+        }
+    });
+}
+</script>
+{%endblock%}

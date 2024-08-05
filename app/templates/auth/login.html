@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学校数字化信息系统</title>
+    {{bootstrap.load_css() }}
+    <link rel="shortcut icon" href="{{ url_for('static', filename='picture/favicon.ico') }}">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f4f9;
+        }
+        .login-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            max-width: 400px;
+            width: 100%;
+        }
+        .login-container h1 {
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+        .login-container button {
+            margin-top: 1rem;
+        }
+        @media (min-width: 768px) {
+            .login-container {
+                padding: 3rem;
+            }
+            .login-container h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+
+<div class="login-container">
+    <h1 class="text-center">学校数字化信息系统</h1>
+    <form method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="mb-3">
+            <label for="username" class="form-label">用户名</label>
+            <input type="text" class="form-control" name="username" placeholder="请输入用户名">
+        </div>
+        <div class="mb-3">
+            <label for="password" class="form-label">密码</label>
+            <input type="password" class="form-control" name="password" placeholder="请输入密码">
+        </div> <!-- 修正了此处遗漏的闭合标签 -->
+        
+        <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="rememberMe" name="remember_me">
+            <label class="form-check-label" for="rememberMe">记住我</label>
+        </div>
+        <button type="submit" class="btn btn-primary w-100" id="login1">登录</button>
+        <button type="button" id="login" class="btn btn-secondary w-100 mt-2" data-bs-toggle="modal" data-bs-target="#exampleModal">人脸识别登录</button>
+        <div class="mb-3 d-flex justify-content-between">
+            <a href="/auth/reset" class="d-block text-center mt-3">忘记密码？</a> <!-- 更正了链接路径 -->
+            <a href="/auth/register" class="d-block text-center mt-3">新用户注册</a>
+        </div>
+    </form>
+{%with messages = get_flashed_messages()%}
+            {%if messages%}
+            {%for message in messages%}
+            <div class="alert alert-warning alert-dismissible" role="alert">
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                {{ message }}
+            </div>
+            {%endfor%}
+            {%endif%}
+            {%endwith%}
+                        
+</div>
+
+
+                            <!-- Modal -->
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="exampleModalLabel">请靠近并注视摄像头</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" id="close" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        
+        <div class="spinner-border" role="status" style="display: none" >
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <video autoplay="false" id="videoElement" style="width: 100%; height: 100%;"></video>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="cancel">取消</button>
+        <div class="col-2" >
+    <label for="videoSource">选择摄像头:</label>
+    </div>
+    <div class="col-4" id="videoSelect">
+    <select class="form-select" id="videoSource" onchange="startStream()"></select>
+    
+    </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>         
+{{bootstrap.load_js() }}
+<script src="/static/build/js/jquery.min.js"></script>
+<script>
+    var video = document.querySelector('video');
+    var select = document.querySelector('#videoSource');
+    var canvas = document.createElement('canvas');
+    var context = canvas.getContext('2d');
+    var login1=document.querySelector('#login1');
+    var intervalId = null;
+    var csrf_token = "{{ csrf_token() }}";
+    document.querySelector('#login').addEventListener('click', function() {
+        startStream();
+    })
+    //选择id为close和cancel的按钮,用于关闭摄像头
+    document.querySelector('#close').addEventListener('click', function() {
+        clearInterval(intervalId);
+        video.pause();
+        video.srcObject.getTracks().forEach(function(track) {
+            track.stop();
+        });
+    })
+    document.querySelector('#cancel').addEventListener('click', function() {
+        clearInterval(intervalId);
+        video.pause();
+        video.srcObject.getTracks().forEach(function(track) {
+            track.stop();
+        });
+    })
+    function createCaptureImageFunction(id) {
+        return function() {
+            captureImage(id);
+            
+        }
+    }
+    function startStream() {
+        if (intervalId) {
+            clearInterval(intervalId);
+        }
+        var constraints = {
+            video: {
+                deviceId: select.value,
+                width: { ideal: 3500 },
+                height: { ideal: 2800 }
+            },
+            audio: false
+        };
+        navigator.mediaDevices.getUserMedia(constraints)
+            .then(function(stream) {
+                video.srcObject = stream;
+                video.play();
+                intervalId = setInterval(createCaptureImageFunction("videoElement"), 2000);
+            })
+            .catch(function(err) {
+                console.log(err);
+            });
+    }
+    function captureImage(id) {
+        //等比例缩放canvas
+        canvas.width = video.videoWidth*640/video.videoHeight;
+        canvas.height = 640;
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        var data = canvas.toDataURL('image/jpeg');
+        clearInterval(intervalId);
+        video.pause();
+        video.srcObject.getTracks().forEach(function(track) {
+            track.stop();
+        });
+        //显示spinner
+        var spinner = document.querySelector('.spinner-border');
+        spinner.style.display = 'block';
+        //隐藏video
+        video.style.display = 'none';
+
+        
+        $.ajax({
+            url: '/auth/face_login',
+            type: 'POST',
+            data: {
+                image: data,
+                _csrf_token: csrf_token
+            },
+            success: function(data) {
+                if (data== 'success') {
+                    window.location.href = '/index';
+                }
+                else {
+                    //隐藏spnnier
+                    spinner.style.display = 'none';
+
+                    alert(data);
+                    //显示video
+                    video.style.display = 'block';
+                    //隐藏modal
+                    $('#exampleModal').modal('hide');
+                }
+            }
+        });
+    }
+    navigator.mediaDevices.enumerateDevices()
+        .then(function(devices) {
+            devices.forEach(function(device) {
+                if (device.kind === 'videoinput') {
+                    var option = document.createElement('option');
+                    option.value = device.deviceId;
+                    option.text = device.label || 'camera ' + (select.length + 1);
+                    select.appendChild(option);
+                }
+            });
+            //startStream();
+        })
+        .catch(function(err) {
+            console.log(err);
+        });
+
+</script>
+</body>
+</html>

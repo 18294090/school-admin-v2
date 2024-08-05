@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% block title%}<title>考勤管理</title>{% endblock %}
+{% block main%}
+
+<div class="container" id="content">
+
+<br>
+    <div class="row">
+    <div class="col-12">
+    <select class="form-select" id="type_" aria-label="Default select example">
+        <option selected>选择请假类型</option>
+        <option value="全部">全部</option>
+        <option value="离校">离校</option>
+        <option value="跑操请假">跑操请假</option>
+        <option value="体育课请假">体育课请假</option>
+    </select>
+
+    </div>
+    </div>
+    <br>
+    <div class="row">        
+        <div class="col-md-4"> 
+            <div class="card shadow"> 
+                <div class="card-header">
+                        <h5>最近七天请假人数</h5>
+                </div>
+            <div class="card-body" >    
+                <div id="bar"   style="width: 100%;height:250px;">      
+               {{bar|safe}}  
+                </div>             
+            </div>
+            </div>
+        </div>
+        <div class="col-md-4"> 
+            <div class="card shadow">
+                <div class="card-header">
+                    <h5>频繁请假</h5>
+                </div>
+                <div class="card-body">
+                    <div id="myChart" style="width: 100%;height:250px;">{{bar10|safe}}</div>
+                </div>                
+            </div>
+        </div><div class="col-md-4"> 
+            <div class="card shadow">
+                <div class="card-header">
+                    <h5>请假理由统计</h5>
+                </div>
+                <div class="card-body">
+                    <div id="wordcloudChart" style="width: 100%;height:250px;">{{wordcloud|safe}}</div>
+                </div>                
+            </div>
+        </div>
+            
+        
+    </div>
+    <br>
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header">
+                请假记录
+                </div>
+                <div class="card-body">
+                    <table class="table table-striped table-bordered" id="table">
+                        <thead>
+                            <tr>  
+                                <th>序号</th>                      
+                                <th>姓名</th>
+                                <th>请假类型</th>                               
+                                <th>请假理由</th>
+                                <th>开始时间</th>
+                                <th>结束时间</th>
+                                <th>状态</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% set my_dict = {'0': '未审核', '1': '已同意', '2': '已拒绝'} %}
+                            {% for record in attend %}
+                            <tr>
+                                <td>{{loop.index+pagination.skip}}</td>
+                                <td>{{record.student.realname}}</td> 
+                                <td>{{record.leave_type}}</td>                               
+                                <td>{{record.reason}}</td>
+                                <td>{{record.start_time}}</td>
+                                <td>{{record.end_time}}</td>
+                                <td>{{my_dict[record.status|string]}}</td>
+                                <td>
+                                    {%if record.status!=1%}
+                                    <div class="btn-group" role="group" aria-label="Basic example">
+                                    <button type="button" onclick="audit({{record.id}},0)" class="btn btn-primary">删除</button>
+                                    <button type="button" onclick="audit({{record.id}},1)" class="btn btn-primary">同意</button>
+                                    <button type="button" onclick="audit({{record.id}},2)" class="btn btn-primary">拒绝</button>
+                                    </div>
+                                    {%endif%}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {{pagination.links}}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer text-muted">
+                    请假记录仅供参考
+                </div>
+            </div>
+
+        </div>
+        <div class="col-md-4">
+                <div class="card shadow" >
+                    <div class="card-header">
+                        <h5>今天请假<strong>{{leave|length}}</strong>人,总人数{{count}}</h5>
+                    </div>
+                    <div class="card-body" >
+                        <ul class="list-group list-group-flush">
+                            {% for record in leave %}
+                            <li class="list-group-item"><strong>{{record.student.realname}} </strong> 事由：{{record.reason}}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+    </div>
+</div>
+</div>
+
+<script src="/static/build/js/jquery.min.js"></script>
+<script>
+    function audit(id,status){
+        $.ajax({
+            url: '/attendance/audit',
+            type: 'POST',           
+            //添加csrfToken
+
+            data: {id:id,status:status, _csrf_token: "{{csrf_token()}}"},
+            success: function(data){
+                if(data == "success"){                    
+                    location.reload();
+                }else{
+                    alert("操作失败，请重试或联系管理员");
+                }
+            }
+        });
+    }
+    select=document.getElementById("type_")
+    select.onchange=function(){
+        
+        //用post方法提交数据
+        $.ajax({
+            url: '/attendance/',
+            type: 'POST',
+            //添加csrfToken
+            headers: { "X-CSRFToken": "{{ csrf_token() }}"},
+            data: {type_: this.value},
+            success: function(data){
+                //将新网页的body部分替换到当前网页
+                 var regex = /<body[^>]*>([\s\S]*)<\/body>/i;
+                    var matches = data.match(regex);
+                    var bodyContent = matches ? matches[1] : '';
+                $("body").html(bodyContent);
+
+            }
+                
+        });
+    }
+
+    </script>
+    <script src={{url_for('static',filename="build/js/echarts.min.js")}}></script>
+{% endblock %}
