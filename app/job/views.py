@@ -115,7 +115,7 @@ def job_mg():
         b=os.path.join(os.getcwd(),"app","static","Job","job_readed",str(i.id))
         count[i.id]=len(os.listdir(a))
         count1[i.id]=len(os.listdir(b))    
-    return(render_template("Job/mainpage.html", p=p,jobs=jobs[start:end] ,count=count,count1=count1,Permission=Permission,subjects=["语文","数学","外语","政治","历史","地理","物理","化学","生物","通用技术","信息技术"],pagination=pagination))
+    return(render_template("job/mainpage.html", p=p,jobs=jobs[start:end] ,count=count,count1=count1,Permission=Permission,subjects=["语文","数学","外语","政治","历史","地理","物理","化学","生物","通用技术","信息技术"],pagination=pagination))
 
 @job_manage.route("/search_job/<name>",methods=["POST","GET"]) # 作业管理主页教师页面为作业情况，学生页面为学生个人信息
 @login_required 
@@ -154,12 +154,12 @@ def search_job(name):
         b=os.path.join(os.getcwd(),"app","static","Job","job_readed",str(i.id))
         count[i.id]=len(os.listdir(a))
         count1[i.id]=len(os.listdir(b))    
-    return(render_template("Job/mainpage.html", p=p,pagination =pagination,jobs=jobs.all()[start:end],count=count,count1=count1,Permission=Permission,subjects=["语文","数学","外语","政治","历史","地理","物理","化学","生物","通用技术","信息技术"]))
+    return(render_template("job/mainpage.html", p=p,pagination =pagination,jobs=jobs.all()[start:end],count=count,count1=count1,Permission=Permission,subjects=["语文","数学","外语","政治","历史","地理","物理","化学","生物","通用技术","信息技术"]))
 
 @job_manage.route("/stu/<id>",methods=["POST","GET"]) # 学生个人作业情况
 def stu_job(id):
     jobs=JobDetail.query.filter(JobDetail.student_number==id).all()
-    return(render_template("Job/stu_job.html",jobs=jobs))
+    return(render_template("job/stu_job.html",jobs=jobs))
 
 @job_manage.route("/assign_job/<id>",methods=["POST","GET"])
 @login_required 
@@ -565,7 +565,7 @@ def job_info(job_id):
         'no_select': no_select_infor
     }
     
-    return render_template("Job/job_info.html", dict=dict_, classes_=classes_, class_=class_, js=js, df=df, j_c=j_c, charts=charts, heat=heat)
+    return render_template("job/job_info.html", dict=dict_, classes_=classes_, class_=class_, js=js, df=df, j_c=j_c, charts=charts, heat=heat)
 
 
 #显示学生答题卡，用于核对系统扫描阅卷结果
@@ -631,7 +631,7 @@ def show_student_card(id_number):
             #将图片转换为base64编码
             img=cv2.imencode('.png',img)[1]
             base64_str = base64.b64encode(img)
-            return (render_template("Job/show_student_card.html",student_card=base64_str.decode(),answers=answers,number=number,job_id=job_id))
+            return (render_template("job/show_student_card.html",student_card=base64_str.decode(),answers=answers,number=number,job_id=job_id))
         except Exception as e:
             return(render_template("404.html",errors= "打开试卷错误，请检查"))
 #更新阅卷信息
@@ -661,7 +661,7 @@ def show_paper(url):
     with open(filename, "rb") as docx_file:
         result = mammoth.convert_to_html(docx_file)
         html = result.value
-    return(render_template("Job/show_paper.html",html=html,url=url))
+    return(render_template("job/show_paper.html",html=html,url=url))
 
 @job_manage.route('/show_file/<path:filename>')
 @login_required 
@@ -769,7 +769,7 @@ def genarate_paper():
     if current_user.role.has_permission(Permission.job_grade):
         pass
     g=GradeInfo.query.all()
-    return(render_template("Job/genarate_paper.html",g=g,difficult=diff,class_=class_,Permission=Permission))"""
+    return(render_template("job/genarate_paper.html",g=g,difficult=diff,class_=class_,Permission=Permission))"""
 
 @job_manage.route("/del/",methods=["POST"])
 @login_required 
@@ -901,7 +901,7 @@ def GetCardFromCamera(id):
             msg=time.strftime("%Y-%m-%d %H:%M:%S") +"没有找到试卷，请重试"
             img=""
         return(jsonify(tag,img,msg))
-    return(render_template("/Job/camera.html",id=id,name=job_.job_name))
+    return(render_template("job/camera.html",id=id,name=job_.job_name))
 @job_manage.route("/judge/<id>",methods=["POST","GET"]) #阅卷主程序
 @login_required 
 @permission_required(Permission.submit_job)
@@ -1199,7 +1199,7 @@ def judge_report(id):
     else:
         time=name=None
     data={"s_num":this,"d_num":len(data),"name":job_.job_name,"total":all,"d_list":data,"time":time,"stu":name}
-    return render_template("Job/judge_report.html",data=data,id=id)
+    return render_template("job/judge_report.html",data=data,id=id)
 
 @job_manage.route("/clear_abnormal/<id>",methods=["POST","GET"]) #阅卷报告
 @login_required
@@ -1261,7 +1261,7 @@ def abnormal(args):
     else:
         retval, buffer = cv2.imencode('.png', pict)
         img_b64 = base64.b64encode(buffer).decode('utf-8')
-    return render_template("Job/abnormal.html",img=img_b64,Job=job_,abnormal=abn)
+    return render_template("job/abnormal.html",img=img_b64,Job=job_,abnormal=abn)
    
 @job_manage.route("/JudgeErroHanding/modifyNumber/",methods=["POST","GET"])
 @login_required
@@ -1429,7 +1429,7 @@ def job_analyse():
         .add_yaxis("标准差", std_devs)
         .set_global_opts(title_opts=opts.TitleOpts(title="所选时段内作业情况变化趋势图"),xaxis_opts=opts.AxisOpts(axislabel_opts=opts.LabelOpts(rotate=-15)))   
     )
-    return render_template("Job/job_analyse.html", classes=classes, chart=bar,chart2=line.render_embed())
+    return render_template("job/job_analyse.html", classes=classes, chart=bar,chart2=line.render_embed())
 
 #班级作业情况对比图
 @job_manage.route("/class_job_comparision/",methods=["POST","GET"])
@@ -1689,7 +1689,7 @@ def genarate_paper():
     if current_user.role.has_permission(Permission.publish_job):
         pass
     g=GradeInfo.query.all()
-    return(render_template("/Job/paper.html",g=g,difficult=diff,class_=class_,Permission=Permission))
+    return(render_template("job/paper.html",g=g,difficult=diff,class_=class_,Permission=Permission))
 
 
 @job_manage.route("/paper/",methods=["POST","GET"])
@@ -1719,9 +1719,9 @@ def initial_paper():
 def modifyTitle():
     if request.method=="POST":
         title=request.form.get("title")
-        img=Image.open(os.path.join(os.getcwd(),"app/static/Job/temp",str(current_user.id)+".png"))
+        img=Image.open(os.path.join(os.getcwd(),"app/static/job/temp",str(current_user.id)+".png"))
         img=creat_paper.add_title(img,title)
-        img.save(os.path.join(os.getcwd(),"app/static/Job/temp",str(current_user.id)+".png"))
+        img.save(os.path.join(os.getcwd(),"app/static/job/temp",str(current_user.id)+".png"))
         img_cv=np.array(img)
         img_cv=cv2.cvtColor(img_cv,cv2.COLOR_RGB2BGR)
         retval, buffer = cv2.imencode('.png', img_cv)
@@ -1744,10 +1744,10 @@ def drawSelect():
         position=int(request.form.get("position"))
         checkMultiple=request.form.get('checkMultiple')
         #打开pil图像,图像位置在static文件夹下的temp目录中
-        img=Image.open(os.path.join(os.getcwd(),"app/static/Job/temp",str(current_user.id)+".png"))
+        img=Image.open(os.path.join(os.getcwd(),"app/static/job/temp",str(current_user.id)+".png"))
         n=img.width//82
         pos=creat_paper.genarate_select(n,number1,number2,quantity,score,img,n*7,n*position,checkMultiple)
-        img.save(os.path.join(os.getcwd(),"app/static/Job/temp",str(current_user.id)+".png"))
+        img.save(os.path.join(os.getcwd(),"app/static/job/temp",str(current_user.id)+".png"))
         #将pil格式图片转换为opencv格式图片
         img_cv=np.array(img)
         img_cv=cv2.cvtColor(img_cv,cv2.COLOR_RGB2BGR)
@@ -1772,10 +1772,10 @@ def drawComplete():
         c_marks=json.loads(c_marks)       
         position=int(request.form.get("position"))
         #打开pil图像,图像位置在static文件夹下的temp目录中
-        img=Image.open(os.path.join(os.getcwd(),"app/static/Job/temp",str(current_user.id)+".png"))
+        img=Image.open(os.path.join(os.getcwd(),"app/static/job/temp",str(current_user.id)+".png"))
         n=img.width//82
         pos=creat_paper.generate_completion(n,img,subtopic,c_marks,n*7,n*position,number1,number2)
-        img.save(os.path.join(os.getcwd(),"app/static/Job/temp",str(current_user.id)+".png"))
+        img.save(os.path.join(os.getcwd(),"app/static/job/temp",str(current_user.id)+".png"))
         #将pil格式图片转换为opencv格式图片
         img_cv=np.array(img)
         img_cv=cv2.cvtColor(img_cv,cv2.COLOR_RGB2BGR)
@@ -1831,12 +1831,12 @@ def rollback():
             start=last["位置"][list(key)[0]]["start"]
             end=last["位置"][list(key)[-1]]["end"]+1
         #打开pil图像,图像位置在static文件夹下的temp目录中
-        img=Image.open(os.path.join(os.getcwd(),"app/static/Job/temp",str(current_user.id)+".png"))
+        img=Image.open(os.path.join(os.getcwd(),"app/static/job/temp",str(current_user.id)+".png"))
         #将img的start到end的区域填充为白色
         n=img.width//82
         img=creat_paper.fillWhite(img,(start-3)*n,end*n)
         pos=start-3
-        img.save(os.path.join(os.getcwd(),"app/static/Job/temp",str(current_user.id)+".png"))
+        img.save(os.path.join(os.getcwd(),"app/static/job/temp",str(current_user.id)+".png"))
         #将pil格式图片转换为opencv格式图片
         img_cv=np.array(img)
         img_cv=cv2.cvtColor(img_cv,cv2.COLOR_RGB2BGR)
@@ -1895,7 +1895,7 @@ def publish_work():
         if files:
             filename=secure_filename(files.filename)
             filename=title+"."+filename.split(".")[-1]
-            url=os.path.join(os.getcwd(),"app/static/Job/paper/question_paper",subject)
+            url=os.path.join(os.getcwd(),"app/static/job/paper/question_paper",subject)
             if not os.path.exists(url):
                 os.makedirs(url)
             url=os.path.join(url,filename)

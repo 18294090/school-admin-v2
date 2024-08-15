@@ -81,7 +81,7 @@ def index():
         #设置图例
         wordcloud.set_series_opts(label_opts=opts.LabelOpts(is_show=False))
         wordcloud = wordcloud.render_embed()
-    return render_template("Attendance/index.html",attend=attend[start:end],wordcloud=wordcloud,bar10=bar10,bar=bar,pagination=pagination,leave=leaves,count=count)
+    return render_template("attendance/index.html",attend=attend[start:end],wordcloud=wordcloud,bar10=bar10,bar=bar,pagination=pagination,leave=leaves,count=count)
 
 @attendance_manage.route("/filing", methods=["POST", "GET"])
 @login_required
@@ -113,7 +113,7 @@ def filing():
             flash("请联系老师加入班级", "error")
             return("404.html", 404)
         records = Attendance.query.filter_by(student_id=id).all()        
-    return render_template("Attendance/filing.html",name=current_user.realname,className=cla.class_name,att=att,form=attendanceForm(),records=records)
+    return render_template("attendance/filing.html",name=current_user.realname,className=cla.class_name,att=att,form=attendanceForm(),records=records)
 
 @attendance_manage.route("/audit", methods=["POST", "GET"])
 @login_required

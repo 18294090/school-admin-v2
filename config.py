@@ -26,7 +26,7 @@ class Config:
 
 class DevelopmentConfig(Config):
     DEBUG = True
-    SQLALCHEMY_DATABASE_URI = os.environ.get('TEST_DATABASE_URL') or "mysql://root:123@127.0.0.1:3306/school"
+    SQLALCHEMY_DATABASE_URI = os.environ.get('TEST_DATABASE_URL') or "mysql://root:123@127.0.0.1:3306/school-v2"
 
 
 class TestingConfig(Config):
@@ -35,7 +35,7 @@ class TestingConfig(Config):
 
 
 class ProductionConfig(Config):
-    SQLALCHEMY_DATABASE_URI = os.environ.get('TEST_DATABASE_URL') or "mysql://root:123@127.0.0.1:3306/school"
+    SQLALCHEMY_DATABASE_URI = os.environ.get('TEST_DATABASE_URL') or "mysql://root:123@127.0.0.1:3306/school-v2"
 
 
 config = {
