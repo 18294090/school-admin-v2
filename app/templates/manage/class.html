@@ -22,8 +22,7 @@
                     </div>
                     <div class="col-md-2">
                         <label for="subject" class="form-label">学科</label>
-                        <select class="form-select" id="subject">
-                        
+                        <select class="form-select" id="subject">                        
                             {% for i in sub %}
                             <option value="{{i}}">{{i}}</option>
                             {% endfor %}
@@ -49,6 +48,7 @@
     </div>
     <br>
     <!-- 以下为作业情况 -->
+   <div id="liveAlertPlaceholder"></div>
     <div class="row">
         <table class="table table-striped table-hover" id="table">
             <thead>
@@ -80,7 +80,7 @@
                         </div>
                     </td>
                     <td>{{ row["平均得分率"] }}</td>
-                    <td><div class="btn-group"><button type="button" class="btn btn-primary " onclick="window.location.href='/student/{{row['id']}}'">前往个人详情页</button><button type="button" class="btn btn-secondary " onclick="personal('{{row["id"]}}', '{{class_.id}}')">查看作业简况</button></div></td>
+                    <td><div class="btn-group"><button type="button" class="btn btn-primary " onclick="window.location.href='/student/{{row['id']}}'">个人详情</button><button type="button" class="btn btn-secondary " onclick="personal('{{row["id"]}}', '{{class_.id}}')">作业简况</button >{%if current_user.id==row["username"][:-10]|int%}<button type="button" class="btn btn-danger" id="liveAlertBtn" onclick=setAlertTrigger('{{row["id"]}}')>删除学生</button>{%endif%}</div></td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -159,7 +159,6 @@ function personal(id, class_id) {
     let csrf_token = "{{ csrf_token() }}";
     $("#chart").empty();
     showLoadingIndicator("#chart");
-
     $.ajax({
         type: 'POST',
         url: '/job/personal/' + id + '_' + class_id,
@@ -193,6 +192,53 @@ function showLoadingIndicator(selector) {
 
 function hideLoadingIndicator(selector) {
     $(selector).find('.spinner-border').remove();
+}
+
+function showAlert(message, type, id) {
+    const alertPlaceholder = document.getElementById('liveAlertPlaceholder');
+    alertPlaceholder.innerHTML = '';
+
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = `
+        <div class="alert alert-${type} alert-dismissible" role="alert">
+            <div>${message}</div>
+            <button type="button" class="btn btn-primary" data-bs-dismiss="alert" aria-label="Close" onclick="deleteStudent(${id})">确定</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="alert" aria-label="Close">取消</button>
+        </div>
+    `;
+    alertPlaceholder.append(wrapper);
+}
+    
+
+function setAlertTrigger(id) {
+    const alertTrigger = document.getElementById('liveAlertBtn');
+    if (alertTrigger) {
+        
+            showAlert('确定要删除该学生吗，删除后不可恢复', 'danger', id);
+            //页面滑动到顶部
+            window.scrollTo(0, 0);
+    
+    }
+}
+
+function delete_student(id) {
+    let csrf_token = "{{ csrf_token() }}";
+    $.ajax({
+        type: 'POST',
+        url: '/manage/delete_student/' ,
+        headers: {
+            'X-CSRFToken': csrf_token
+        },
+        data: {
+            id: id
+        },
+        success: function() {
+            location.reload();
+        },
+        error: function() {
+            console.log('Error retrieving data');
+        }
+    });
 }
 </script>
 {% endblock %}

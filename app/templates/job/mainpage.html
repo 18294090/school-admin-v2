@@ -29,28 +29,25 @@
         }
         .table-striped-columns tbody tr:nth-of-type(odd) {
             background-color: #f8f9fa;
-        }
-    
+        }    
 </style>
 {%endblock%}
 {% block main%}
-
 <div class="container-fluid">
-
 	<div class="row">
             <div class="col-md-4 mb-3">
                 <div class="card shadow h-100">
                     <div class="card-body">
                         <h5 class="card-title"><i class="bi bi-pencil-square"></i> 发布作业</h5>
-                        <p class="card-text">
-                            1. 发布作业，填写作业标题等作业信息<br>
-                            2. 确定选择题答案<br>
-                            3. 生成打印相应答题卡<br>
-                        </p>
-                        <div class="text-end">
+                        <p class="card-text " >
+                            填写作业标题等信息<br>
+                            确定选择题答案<br>
+                            生成打印相应答题卡<br>
+                        </p>                      
+                    </div>
+                      <div class="card-footer text-muted" style="text-align: right">
                             <button type="button" onclick="document.location = '/job/genarate_paper'" class="btn btn-primary"><i class="bi bi-pencil-square"></i>发布</button>
                         </div>
-                    </div>
                 </div>
             </div>
 
@@ -59,32 +56,27 @@
                     <div class="card-body">
                         <h5 class="card-title"><i class="bi bi-graph-up"></i> 统计分析</h5>
                         <p class="card-text">
-                            1. 年级报表<br>
-                            2. 班级作业统计<br>
-                            3. 学生个人分析报告<br>
+                            <i class="bi bi-info-circle"> 年级报表</i><br>
+                            <i class="bi bi-info-circle"> 班级作业统计</i><br>
+                            <i class="bi bi-info-circle"> 学生个人分析报告</i>
                         </p>
-                        <div class="text-end">
+                    </div>
+                     <div class="card-footer text-muted" style="text-align: right">
                             <a class="btn btn-primary" href="/job/job_analyse"><i class="bi bi-graph-up"></i>前往</a>
                         </div>
-                    </div>
                 </div>
             </div>
-
             <div class="col-md-4 mb-3">
                 <div class="card shadow h-100">
                     <div class="card-body">
-                        <h5 class="card-title"><i class="bi bi-upload"></i> 补交作业</h5>
+                        <h5 class="card-title"><i class="bi bi-upload"></i> 摄像头交作业</h5>
                         <p class="card-text">
-                            上传答卷，不需要区分作业
+                            使用摄像头采集答题卡<br>请保证答题卡平整<br>将答题卡完整置于摄像头前
                         </p>
-                        <div class="input-group mb-3">
-                            <input type="file" class="form-control" id="GroupFile" multiple accept=".png,.jpg,.bmp">
-                            <button class="btn btn-outline-primary" type="button" id="GroupFileAddon" onclick="upload_paper1()">上传</button>
-                        </div>
-                        <div class="text-end">
-                            <button class="btn btn-primary" onclick="judge1()"><i class="bi bi-check2-circle"></i> 阅卷</button>
-                        </div>
                     </div>
+                    <div class="card-footer text-muted" style="text-align: right">
+                            <button class="btn btn-primary" onclick="window.location = '/job/detect_paper'"><i class="bi bi-camera"></i> 采集</button>
+                        </div>
                 </div>
             </div>
         </div>
@@ -109,60 +101,55 @@
 
         <div class="row">
             <div class="col-12">
-                <table class="table table-striped shadow text-center">
+                <table class="table table-striped shadow ">
                     <thead class="table-secondary">
                         <tr>
                             <th>序号</th>
-                            <th>名称</th>
-                            <th>学科</th>
+                            <th>名称</th>                            
                             <th>发布时间</th>
                             <th>发布者</th>
-                            <th>上传答卷</th>
-                            <th>摄像头</th>
+                            <th>上传答卷</th>                            
                             <th>待阅</th>
                             <th>已阅</th>
                             <th>操作</th>
                         </tr>
                     </thead>
                     <tbody class="table-striped-columns">
-                        {% for i in jobs %}
-                        <tr>
-                            <td>{{ loop.index + pagination.skip }}</td>
-                            <td><a href='/job/job_info/{{ i.id }}'>{{ i.job_name }}</a></td>
-                            <td>{{ i.subject }}</td>
-                            <td>{{ i.publish_time }}</td>
-                            <td>{{ i.publisher_name.username }}</td>
-                            <td>
-                                <div class="input-group">
-                                    <input type="file" class="form-control" id="inputGroupFile{{ i.id }}" multiple accept=".png,.jpg,.bmp">
-                                    <button class="btn btn-outline-primary" type="button" id="inputGroupFileAddon04" onclick="upload_paper({{ i.id }})"><i class="bi bi-upload"></i>上传</button>
-                                </div>
-                            </td>
-                            <td>
-                                <button class="btn btn-outline-primary" onclick="window.location.href='/job/GetCardFromCamera/{{ i.id }}'"><i class="bi bi-camera"></i> 采集</button>
-                            </td>
-                            <td id="c-{{ i.id }}">{{ count[i.id] }}</td>
-                            <td id="r-{{ i.id }}">{{ count1[i.id] }}</td>
-                            <td>
-                                <div class="btn-group btn-group-sm" role="group">
-                                    <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-gear"></i> 操作</button>
-                                    <ul class="dropdown-menu">
-                                        <li><button type="button" class="btn btn-secondary dropdown-item"  data-bs-toggle="modal" data-bs-target="#assignJobModal" onclick="get_class({{ i.id }})"><i class="bi bi-person-plus"></i> 分配作业</button></li>
-                                        <li><button type="button" class="btn btn-secondary dropdown-item"  onclick="showPasswordPrompt({{ i.id }})"><i class="bi bi-pencil-square"></i> 修改选择题答案</button></li>
-                                        <li><button type="button" class="btn btn-secondary dropdown-item" onclick="window.open('{{ url_for('static', filename='job/answerCard/' + i.paper_url) }}', '_blank')"><i class="bi bi-card-text"></i> 查看答题卡</button></li>
-                                        <li><button type="button" class="btn btn-secondary dropdown-item" onclick="window.location.href='/job/show_paper/{{ i.question_paper }}'"><i class="bi bi-book-fill"></i> 查看试题卷</button></li>
-                                        <li><button type="button" class="btn btn-secondary dropdown-item"  onclick="judge({{ i.id }})"><i class="bi bi-check"></i> 选择题阅卷</button></li>
-                                        {% if i.no_multiple_choice_info|length > 2 %}
-                                        <li><button type="button" class="btn btn-secondary dropdown-item"   onclick="get_title_number({{ i.id }})"><i class="bi bi-patch"></i> 主观题阅卷</button></li>
-                                        {% endif %}
-                                        <li><button type="button" class="btn btn-secondary dropdown-item" onclick="window.location.href='/job/judge_report/{{ i.id }}'"><i class="bi bi-book"></i> 查看自动阅卷报告</button></li>
-                                        <li><button type="button" class="btn btn-secondary dropdown-item" onclick="resetJob({{ i.id }})"><i class="bi  bi-arrow-clockwise"></i> 重置作业</button></li>
-                                        <li><button type="button" class="btn btn-secondary dropdown-item" onclick="exportData({{ i.id }})"><i class="bi bi-file-earmark"></i> 导出学生成绩</button></li>
-                                        {% if count1[i.id] == 0 and count[i.id] == 0 %}
-                                        <li><button type="button" class="btn btn-secondary dropdown-item" onclick="deleteJob({{ i.id }})"><i class="bi bi-trash"></i> 删除</button></li>
-                                        {% endif %}
-                                    </ul>
-                                </div>
+                    {% for i in jobs %}
+                    <tr>
+                        <td>{{loop.index + pagination.skip }}</td>
+                        <td><a href='/job/job_info/{{ i.id }}'>{{ i.job_name }}</a></td>
+                        
+                        <td>{{i.publish_time.strftime("%Y-%m-%d") }}</td>
+                        <td>{{i.publisher_name.realname }}</td>
+                        <td >
+                            <div class="input-group input-group-sm mb-3">
+                                <input type="file" class="form-control " id="inputGroupFile{{ i.id }}" multiple accept=".png,.jpg,.bmp">
+                                <button class="btn btn-outline-primary" type="button" id="inputGroupFileAddon04" onclick="upload_paper({{ i.id }})"><i class="bi bi-upload"></i>上传</button>
+                            </div>
+                        </td>                        
+                        <td id="c-{{ i.id }}">{{ count[i.id] }}</td>
+                        <td id="r-{{ i.id }}">{{ count1[i.id] }}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-gear"></i> 操作</button>
+                                <ul class="dropdown-menu">
+                                    <li><button type="button" class="btn btn-secondary dropdown-item"  data-bs-toggle="modal" data-bs-target="#assignJobModal" onclick="get_class({{ i.id }})"><i class="bi bi-person-plus"></i> 分配作业</button></li>
+                                    <li><button type="button" class="btn btn-secondary dropdown-item"  onclick="showPasswordPrompt({{ i.id }})"><i class="bi bi-pencil-square"></i> 修改选择题答案</button></li>
+                                    <li><button type="button" class="btn btn-secondary dropdown-item" onclick="window.open('{{ url_for('static', filename='job/answerCard/' + i.paper_url) }}', '_blank')"><i class="bi bi-card-text"></i> 查看答题卡</button></li>
+                                    <li><button type="button" class="btn btn-secondary dropdown-item" onclick="window.location.href='/job/show_paper/{{ i.question_paper }}'"><i class="bi bi-book-fill"></i> 查看试题卷</button></li>
+                                    <li><button type="button" class="btn btn-secondary dropdown-item"  onclick="judge({{ i.id }})"><i class="bi bi-check"></i> 选择题阅卷</button></li>
+                                    {% if i.no_multiple_choice_info|length > 2 %}
+                                    <li><button type="button" class="btn btn-secondary dropdown-item"   onclick="get_title_number({{ i.id }})"><i class="bi bi-book"></i> 主观题阅卷</button></li>
+                                    {% endif %}
+                                    <li><button type="button" class="btn btn-secondary dropdown-item" onclick="window.location.href='/job/judge_report/{{ i.id }}'"><i class="bi bi-clipboard"></i> 查看自动阅卷报告</button></li>
+                                    <li><button type="button" class="btn btn-secondary dropdown-item" onclick="resetJob({{ i.id }})"><i class="bi  bi-arrow-clockwise"></i> 重置作业</button></li>
+                                    <li><button type="button" class="btn btn-secondary dropdown-item" onclick="exportData({{ i.id }})"><i class="bi bi-file-earmark"></i> 导出学生成绩</button></li>
+                                    {% if count1[i.id] == 0 and count[i.id] == 0 %}
+                                    <li><button type="button" class="btn btn-secondary dropdown-item" onclick="deleteJob({{ i.id }})"><i class="bi bi-trash"></i> 删除</button></li>
+                                    {% endif %}
+                                </ul>
+                            </div>
                             </td>
                         </tr>
                         {% endfor %}
@@ -564,10 +551,17 @@ function hideLoadingIndicator(selector) {
                        var counttag=document.getElementById("c-"+String(id))
                        counttag.innerHTML=""
                        counttag.innerHTML="<a href="+{{'/answer/url'|replace('url',id)}}+">"+data[1]+"</a>"
+                       console.log(data)
+                       if (data[2].length>0){
+                        //重新加载
+                        location.reload();
+                       }
                        hideSpinners();  // 隐藏 Spinners
+                       if(data[1]>0){
                         judge(id)
-                    } else {
-                        
+                       }
+                    
+                    } else { 
                         alert("上传失败")
                     }
                     

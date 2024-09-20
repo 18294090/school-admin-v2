@@ -187,7 +187,7 @@
                         <tr>
                             <td><a href="/job/job_info/{{i.job.id}}">{{i.job.job_name}}</a></td>
                             <td>{{i.classes.class_name}}</td>
-                            <td>{{i.average/i.job.total1*100|round(2)}}</td>
+                            <td>{{(i.average/i.job.total1*100)|round(2)}}</td>
                         </tr>
                         {%endfor%}
                 <button class="btn btn-light w-100 mt-3" onclick="document.location = '/job/'">查看全部</button>

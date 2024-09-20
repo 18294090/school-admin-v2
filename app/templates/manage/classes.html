@@ -166,7 +166,7 @@
                 return;
             }
             const msg =  class_id + '|' + selectedSubject;
-            fetch('/manage/get_qrcode', {
+            fetch('/manage/get_qrcode/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -186,7 +186,7 @@
             })
             .catch(error => console.error(error));
 
-            fetch('/manage/get_teachers', {
+            fetch('/manage/get_teachers/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -213,7 +213,7 @@
         document.getElementById('inviteTeacherForm').addEventListener('submit', (e) => {
             e.preventDefault();
             const selectedTeacher = teachers.value;
-            fetch('/manage/invite_teacher', {
+            fetch('/manage/invite_teacher/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -299,7 +299,7 @@
                 return;
             }
 
-            fetch('/manage/get_classes', {
+            fetch('/manage/get_classes/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

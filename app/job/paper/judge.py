@@ -2,7 +2,8 @@ from PIL import Image, ImageDraw, ImageFont
 import numpy as np
 import cv2
 from pyzbar import pyzbar
-from .detect import find_paper
+import os
+
 line=[]
 n=0
 def open_answer_card(url1):
@@ -11,8 +12,16 @@ def open_answer_card(url1):
     n=img.shape[1]//82
     return(img)
 
-def open_student_card(url):   
-    img=cv2.imread(url)
+def open_student_card(url):  
+    img=None 
+    if os.path.isfile(url):
+        # 如果是路径，则读取图像
+        img = cv2.imread(url)
+    elif isinstance(url, np.ndarray):
+        # 如果是数组，则直接使用
+        img = url
+    if img is None:
+        return None 
     n=img.shape[1]//82
     img=img[n*1:-n*1,n*1:-n*1]
     return(img)
@@ -26,10 +35,10 @@ def qr_recognize(pic,pos):
         pic = cv2.cvtColor(pic, cv2.COLOR_BGR2GRAY)    
     pic=pic[pos[0]:pos[1],pos[2]:pos[3]]
     
-    #保存pic
-    
+    #图像处理，提高二维码识别准确率
     if pic.dtype != np.uint8:
         pic = pic.astype(np.uint8)
+    
     # 去除噪点
     pic = cv2.medianBlur(pic, 3)
     # 二值化处理
@@ -41,8 +50,6 @@ def qr_recognize(pic,pos):
     pic = cv2.erode(pic, kernel, iterations=1)
     #反色
     pic= cv2.bitwise_not(pic)
-    #显示pic
-    
     barcodes =""
     barcodes = pyzbar.decode(pic)    
     barcodeData=[]
@@ -55,30 +62,27 @@ def pict(gray):  # 图像处理，二值化
         return None
     if len(gray.shape)!=2:
         gray = cv2.cvtColor(gray, cv2.COLOR_BGR2GRAY) 
-
     #如果gray是空图像，返回一个空图像
     if gray.shape[0]==0:
-        return None     
-    # 图像二值化处理，将灰度图转换为二值图
+        return None
+    gray = cv2.medianBlur(gray, 5)
+    gray = cv2.GaussianBlur(gray, (5, 5), 0)
     # 二值化处理
     thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 73, 2)
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
-    thresh=cv2.erode(thresh,kernel,iterations=1)
-    thresh=cv2.dilate(thresh,kernel,iterations=2)
-    binary_erosion =cv2.erode(thresh, kernel,iterations=4)#腐蚀
-    binary_dilation =cv2.dilate(binary_erosion, kernel,iterations=4) #膨胀   
-    # 形态学操作，去除噪点和细节，填充小的白色区域
-    #opening = cv2.morphologyEx(binary_dilation, cv2.MORPH_OPEN, kernel)
-    #closing = cv2.morphologyEx(opening, cv2.MORPH_CLOSE, kernel)
-    
+    thresh=cv2.erode(thresh,kernel,iterations=3)
+    thresh=cv2.dilate(thresh,kernel,iterations=4)
+    binary_erosion =cv2.erode(thresh, kernel,iterations=5)#腐蚀
+    binary_dilation =cv2.dilate(binary_erosion, kernel,iterations=5) #膨胀   
     return(binary_dilation)
-
  
 def paper_ajust(original_image, target_image):
     #将目标图像大小调整为原图像大小
     target_image = cv2.resize(target_image, (original_image.shape[1], original_image.shape[0]))
     original_corners = find_corners(original_image)
     target_corners = find_corners(target_image)
+    if original_corners is None or target_corners is None:
+        return(None)
     # 将target_image透视变换
     try:
         M = cv2.getPerspectiveTransform(target_corners, original_corners)
@@ -98,23 +102,22 @@ def find_corners(img):
         gray=img 
     #模糊
     #gray=cv2.equalizeHist(gray)
-    #gray = cv2.medianBlur(gray, 5)
-    #gray = cv2.GaussianBlur(gray, (5, 5), 0)
+    gray = cv2.medianBlur(gray, 5)
+    gray = cv2.GaussianBlur(gray, (5, 5), 0)
     # 二值化处理
     #_, thresh = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
     # 二值化处理
-    average_brightness = gray.mean()
+    #average_brightness = gray.mean()
     #提高亮度
-    """   while average_brightness < 230:
+    """while average_brightness < 240:
         gray = cv2.convertScaleAbs(gray, alpha=1.5, beta=50)
-        average_brightness=gray.mean()
-        """
-    thresh=cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 173, 2)
+        average_brightness=gray.mean()"""    
+    thresh=cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 73, 2)
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
-    thresh=cv2.erode(thresh,kernel,iterations=1)
-    thresh=cv2.dilate(thresh,kernel,iterations=2) #膨胀,消除噪点
-    erode = cv2.erode(thresh, kernel, iterations=3)#腐蚀，去除细节
-    dilate = cv2.dilate(erode, kernel, iterations=3)#膨胀，增加细节    
+    thresh=cv2.erode(thresh,kernel,iterations=2)
+    thresh=cv2.dilate(thresh,kernel,iterations=3) #膨胀,消除噪点
+    erode = cv2.erode(thresh, kernel, iterations=4)#腐蚀，去除细节
+    dilate = cv2.dilate(erode, kernel, iterations=4)#膨胀，增加细节    
     #canny=cv2.Canny(thresh, 50, 150)
     # 查找轮廓
     """cv2.namedWindow("gray", cv2.WINDOW_NORMAL)
@@ -122,7 +125,6 @@ def find_corners(img):
     cv2.waitKey(0)
     cv2.destroyAllWindows()"""
     contours, _ = cv2.findContours(dilate, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    
     # 计算轮廓的质心，即中心点
     centers = []
     for cnt in contours:
@@ -133,23 +135,17 @@ def find_corners(img):
                 cx = int(M['m10'] / M['m00'])
                 cy = int(M['m01'] / M['m00'])
             else:
-                cx=cy=0
-            
+                cx=cy=0            
             centers.append((cx, cy))
     # 确定四个顶点
     if len(centers)<4:
-        print("cuow")
-        return([(0,0),(0,0),(0,0),(0,0)])
+        print("无法定位四个顶点")
+        return(None)
     top_left = min(centers, key=lambda x: x[0] + x[1])
     bottom_right = max(centers, key=lambda x: x[0] + x[1])
     top_right = max(centers, key=lambda x: x[0] - x[1])
-    bottom_left = min(centers, key=lambda x: x[0] - x[1])
-    
-    # 返回四个顶点的坐标
-    cv2.circle(img, top_left, 10, (0, 0, 255), -1)
-    cv2.circle(img, bottom_right, 10, (0, 0, 255), -1)
-    cv2.circle(img, top_right, 10, (0, 0, 255), -1)
-    cv2.circle(img, bottom_left, 10, (0, 0, 255), -1)
+    bottom_left = min(centers, key=lambda x: x[0] - x[1])    
+    # 返回四个顶点的坐标   
     return(np.array([top_left,bottom_right,top_right,bottom_left],dtype=np.float32))
 
 def number_pos(pic): #识别号码

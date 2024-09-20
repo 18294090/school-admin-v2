@@ -1,0 +1,429 @@
+{% extends "base.html" %}
+<html lang="zh-CN">
+
+   {% block title %} <title>摄像头纸张检测</title>{% endblock %}
+   {%block style%}
+    #video {
+        display: none;
+    }
+    .canvas-container {
+        width: 100%;
+        height: 0;
+        padding-bottom: 75%; /* 4:3 aspect ratio */
+        position: relative;
+    }
+    .canvas-container canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+    {%endblock%}
+    {%block head%}
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <script src="/static/assets/js/jsQR.js"></script>
+   <script async src="/static/assets/js/opencv.js" onload="onOpenCvReady();"></script>
+    {%endblock%}
+{% block main %}
+<div class="container">
+    <div class="row">
+    <div class="col-7" >
+    <div class="card shadow" id="card_left">
+        <div class="card-header">
+            <label for="videoSource">选择摄像头:</label>
+            <select class="form-select" id="videoSource" onchange="startCamera()"></select>
+        </div>
+        <div class="card-body">
+            <div class="position-relative">
+                <video id="video" width="2200" height="1600" autoplay playsinline willReadFrequently="true"></video>
+                <canvas id="canvasOutput" width="640" height="480" willReadFrequently="true"></canvas>
+            </div>  
+        </div>
+    </div> 
+    </div>
+    
+        <div class="col-5" >
+        <div class="card shadow "> 
+            <div class="card-header">
+            <h3 class="card-title" id="prompt">没有识别到试卷</h3>
+            </div> 
+            <div class="card-body">
+                <canvas id="result"  willReadFrequently="true"></canvas>
+            </div>
+            <div class="card-footer text-muted" id="prompt1">
+            </div>
+        </div>
+        </div>
+</div>
+<script>
+    let video = document.getElementById('video');
+    let canvas = document.getElementById('canvasOutput');
+    let context = canvas.getContext('2d');
+    let result = document.getElementById('result');
+    let select = document.getElementById('videoSource');
+    let prompt = document.getElementById('prompt');
+    let prompt1 = document.getElementById('prompt1');
+    let lastTime = 0;
+      window.onload = function() {
+        navigator.mediaDevices.enumerateDevices()
+          .then(function(devices) {
+            devices.forEach(function(device) {
+              if (device.kind === 'videoinput') {
+                var option = document.createElement('option');
+                option.value = device.deviceId;
+                option.text = device.label || 'camera ' + (select.length + 1);
+                select.appendChild(option);
+              }
+            });
+            select.onchange();
+          })
+          .catch(function(err) {
+            console.log('An error occurred: ' + err);
+          });
+      }
+
+      function onOpenCvReady() {
+        if (cv.getBuildInformation) {
+          console.log(cv.getBuildInformation());
+        }
+        startCamera();
+      }
+
+      //检查摄像头
+     
+        function startCamera() {
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                let videoSource = select.value;
+                navigator.mediaDevices.getUserMedia({ video: { deviceId: videoSource ? { exact: videoSource } : undefined } })
+                    .then(function(stream) {
+                        video.srcObject = stream;
+                        video.onloadedmetadata = function() {
+                            video.play();
+                            detectPaper();
+                        };
+                    })
+                    .catch(function(err) {
+                        console.error("摄像头访问错误: " + err);
+                        alert("无法访问摄像头，请确保已授予权限并且摄像头未被其他程序占用。");
+                    });
+            } else {
+                console.error("您的浏览器不支持 getUserMedia API");
+                alert("您的浏览器不支持访问摄像头，请尝试使用最新版本的 Chrome、Firefox 或 Safari。");
+            }
+        }
+function resizeCanvas(canvas) {
+    let container = canvas.parentElement;
+    let containerWidth = container.clientWidth;
+    let containerHeight = container.clientHeight;    
+    canvas.style.width = containerWidth + 'px';
+    canvas.style.height = containerHeight + 'px';
+    canvas.width = containerWidth;
+    canvas.height = containerHeight;
+}
+
+function detectPaper() {
+    let src, gray, blurred, edged, contours, hierarchy;  
+    function processVideo() {
+        let src = new cv.Mat(video.height, video.width, cv.CV_8UC4);
+    let gray = new cv.Mat();
+    let blurred = new cv.Mat();
+    let edged = new cv.Mat();
+    let contours = new cv.MatVector();
+    let hierarchy = new cv.Mat(); 
+    let flag = false;  
+    let code=null;
+    let currentTime = Date.now();
+    if (currentTime - lastTime < 1000 / 30) {  // 限制为每秒30帧
+        return;
+    }
+    lastTime = currentTime;    
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    //从video中获取图像
+    src.data.set(context.getImageData(0, 0, canvas.width, canvas.height).data);
+    cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+     
+    cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0);
+    
+    cv.Canny(blurred, edged, 10, 150, 3);
+    cv.findContours(edged, contours, hierarchy, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE);
+    let max_contour = contours.get(0);                
+    for (let i = 0; i < contours.size(); i++) {
+        let contour = contours.get(i);
+        let approx = new cv.Mat();
+        cv.approxPolyDP(contour, approx, 0.02 * cv.arcLength(contour, true), true);
+        if (approx.rows === 4) {
+            let area = cv.contourArea(contour);
+            let max_area = cv.contourArea(max_contour);
+            if (area > max_area) {
+                max_contour = contour;
+            }
+        }
+        approx.delete();                    
+    }
+    if (max_contour) {
+        let max_area = cv.contourArea(max_contour);                                  
+        let color = new cv.Scalar(255, 0, 0, 255);
+        let contoursVec = new cv.MatVector();        
+        let resultCanvas = document.getElementById("result");
+        let resultContext = resultCanvas.getContext('2d');
+    
+        let peri = cv.arcLength(max_contour, true);
+        let approx = new cv.Mat();
+        cv.approxPolyDP(max_contour, approx, 0.02 * peri, true);
+
+        let contoursColor = new cv.Scalar(255, 0, 0); // Red color for the contour
+        let matVector = new cv.MatVector();
+        matVector.push_back(max_contour);
+        cv.drawContours(src, matVector, -1, contoursColor, 4);
+        if (max_area > 0.5 * src.rows * src.cols) { 
+        if (approx.rows == 4) {
+            let points = [];
+            for (let i = 0; i < approx.rows; i++) {
+                let point = approx.data32S.slice(i * 2, i * 2 + 2);
+                points.push({ x: point[0], y: point[1] });
+            }
+            points.sort((a, b) => a.x - b.x);
+            let tl, tr, bl, br;
+            if (points[0].y < points[1].y) {
+                tl = points[0];
+                bl = points[1];
+            } else {
+                tl = points[1];
+                bl = points[0];
+            }
+            if (points[2].y < points[3].y) {
+                tr = points[2];
+                br = points[3];
+            } else {
+                tr = points[3];
+                br = points[2];
+            }
+            let srcTri = cv.matFromArray(4, 1, cv.CV_32FC2, [
+                tl.x, tl.y,
+                tr.x, tr.y,
+                br.x, br.y,
+                bl.x, bl.y
+            ]);
+            let widthA = Math.sqrt(Math.pow(br.x - bl.x, 2) + Math.pow(br.y - bl.y, 2));
+            let widthB = Math.sqrt(Math.pow(tr.x - tl.x, 2) + Math.pow(tr.y - tl.y, 2));
+            let maxWidth = Math.max(widthA, widthB);
+            let heightA = Math.sqrt(Math.pow(tr.x - br.x, 2) + Math.pow(tr.y - br.y, 2));
+            let heightB = Math.sqrt(Math.pow(tl.x - bl.x, 2) + Math.pow(tl.y - bl.y, 2));
+            let maxHeight = Math.max(heightA, heightB);
+            let dstTri = cv.matFromArray(4, 1, cv.CV_32FC2, [
+                0, 0,
+                maxWidth -1, 0,
+                maxWidth -1, maxHeight -1,
+                0, maxHeight -1
+            ]);
+            let M = cv.getPerspectiveTransform(srcTri, dstTri);
+            let dst = new cv.Mat();
+            cv.warpPerspective(gray, dst, M, new cv.Size(maxWidth, maxHeight));
+            let roi = dst.roi(new cv.Rect(maxWidth*0.03, maxHeight*0.03, maxWidth*0.95, maxHeight*0.95));
+            //如果roi的宽度大于高度，则旋转90度
+            if (roi.cols > roi.rows) {
+                cv.transpose(roi, roi);
+                cv.flip(roi, roi, 1);
+            }             
+            code=get_qr(roi);
+            
+            cv.imshow('result', roi);
+            roi.delete();
+            srcTri.delete();
+            dstTri.delete();
+            M.delete();
+            dst.delete();                         
+            matVector.delete(); 
+            if (code){
+                flag=true;
+            }                  
+        }
+        }
+        approx.delete();
+        contoursVec.push_back(max_contour);
+        cv.drawContours(src, contoursVec, -1, color, 4, cv.LINE_8, hierarchy, 100);
+        contoursVec.delete(); 
+    }
+    cv.imshow('canvasOutput', src);
+        src.delete();
+        gray.delete();
+        blurred.delete();
+        edged.delete();
+        contours.delete();
+        hierarchy.delete();
+        if (flag && code){
+            prompt.innerHTML = "识别成功，试卷编号："+code;
+            //添加按钮
+            prompt1.innerHTML = ""
+            var button = document.createElement("button");
+            button.innerHTML = "提交作业";
+            button.id = "submit";
+            button.className = "btn btn-primary";
+            //添加按钮事件
+            button.onclick = function() {
+                submit(code);
+            }
+            document.getElementById("prompt1").appendChild(button);
+            //添加重新检测按钮
+            var button = document.createElement("button");
+            button.innerHTML = "重新采集";
+            button.id = "re_detect";
+            //添加按钮事件
+            button.onclick = function() {
+                re_detect();
+            };
+            button.className = "btn btn-secondary";
+            document.getElementById("prompt1").appendChild(button);
+            var button = document.createElement("button");
+            button.className = "btn btn-secondary";
+            button.innerHTML = "旋转图像";
+            button.onclick = function() {
+                rotate();
+            };
+            button.className = "btn btn-success";
+             return                  
+        }                        
+        requestAnimationFrame(processVideo);
+    }
+
+     processVideo();
+    }
+   function re_detect() {
+    try {
+        // 清空 canvasOutput 的内容
+        let canvasOutput = document.getElementById('canvasOutput');
+        if (canvasOutput) {
+            let context = canvasOutput.getContext('2d');
+            context.clearRect(0, 0, canvasOutput.width, canvasOutput.height);
+        } else {
+            console.error("Canvas element not found");
+        }
+
+        // 清空 result canvas 的内容
+        let resultCanvas = document.getElementById('result');
+        if (resultCanvas) {
+            let resultContext = resultCanvas.getContext('2d');
+            resultContext.clearRect(0, 0, resultCanvas.width, resultCanvas.height);
+        } else {
+            console.error("Result canvas element not found");
+        }
+
+        // 清空提示信息
+        if (prompt) {
+            prompt.innerHTML = "没有识别到试卷";
+        } else {
+            console.error("Prompt element not found");
+        }
+
+        // 重新启动摄像头
+        startCamera();
+    } catch (err) {
+        console.error("Error during re_detect: " + err);
+    }
+}
+function rotate(){
+    let ctx=result.getContext();
+    const centerX =result.width / 2;
+    const centerY = result.height / 2;
+    ctx.translate(centerX,centerY);
+    ctx.rotate(Math.PI/4);
+    ctx.drawImage(ctx.drawImage(image, -image.width / 2, -image.height / 2))
+}
+function get_qr(roi) {
+    // 检查传递的 roi 是否是有效的 cv.Mat 对象
+    if (!(roi instanceof cv.Mat)) {
+        throw new Error("Invalid roi: Expected cv.Mat");
+    }
+
+    // 定义上半部分的矩形区域
+    let upperHalfRect = new cv.Rect(0, 0, roi.cols, Math.floor(roi.rows / 2));
+    
+    // 函数用于检测二维码
+    function detectQR(mat) {
+        // 获取上半部分的矩阵
+        let upperHalfMat = mat.roi(upperHalfRect);
+
+        // 将上半部分从灰度（或 BGR）转换为 RGBA 格式
+        let rgbaMat = new cv.Mat();
+        cv.cvtColor(upperHalfMat, rgbaMat, cv.COLOR_GRAY2RGBA); // 如果原始图像是灰度图，否则使用 cv.COLOR_BGR2RGBA
+
+        // 将 rgbaMat 转换为 Uint8ClampedArray
+        let imageDataArray = new Uint8ClampedArray(rgbaMat.data, rgbaMat.cols * rgbaMat.rows * 4);
+
+        // 创建 ImageData 对象
+        let imageData = new ImageData(imageDataArray, rgbaMat.cols, rgbaMat.rows);
+
+        // 调用 jsQR 函数
+        let code = jsQR(imageData.data, imageData.width, imageData.height);
+
+        // 释放内存
+        upperHalfMat.delete();
+        rgbaMat.delete();
+
+        return code;
+    }
+
+    // 尝试检测二维码
+    let code = detectQR(roi);
+    if (code) {
+        return code.data;
+    }
+
+    // 旋转 180 度后再试一次
+    cv.rotate(roi, roi, cv.ROTATE_180);
+    code = detectQR(roi);
+    if (code) {
+        return code.data;
+    }
+
+    // 如果再次旋转 180 度后仍然无法识别，返回 null
+    cv.rotate(roi, roi, cv.ROTATE_180);
+    return null;
+}
+
+function submit(code) {
+    var resultCanvas = document.getElementById('result');
+    var img = resultCanvas.toDataURL('image/png');
+    let csrf_token='{{csrf_token()}}';
+    fetch('/job/detect_paper/', 
+     
+  {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': csrf_token
+    },
+    body: JSON.stringify({ image: img ,id:code})
+  }).then(response => response.json())
+  .then(data => {
+    prompt.innerHTML = "作业提交成功";
+  });
+}
+function onOpenCvReady() {
+    if (cv.getBuildInformation) {
+        console.log(cv.getBuildInformation());
+    }
+    let canvasOutput = document.getElementById('canvasOutput');
+    
+    resizeCanvas(canvasOutput); 
+    
+    let container = result.parentElement;
+    let containerWidth = container.clientWidth*0.93;
+   
+    result.style.width = containerWidth + 'px'; 
+    startCamera();
+}
+// 在窗口大小改变时重新调整canvas大小
+window.addEventListener('resize', function() {
+    let canvasOutput = document.getElementById('canvasOutput');    
+    resizeCanvas(canvasOutput);
+    let result=document.getElementById('result');
+    let container = result.parentElement;
+    let containerWidth = container.clientWidth;
+    result.style.width = containerWidth + 'px'; 
+});
+</script>
+{% endblock %}

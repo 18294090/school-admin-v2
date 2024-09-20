@@ -27,7 +27,7 @@ function update(){
         headers:{"X-CSRFToken":csrf_token},
         contentType:"application/json",
         data:JSON.stringify({
-            "student_id":"{{student_id}}",
+            "student_id":"{{number}}",
             "job_id":"{{job_id}}" ,            
             'answers':{{answers|safe}},
         }),
@@ -38,7 +38,7 @@ function update(){
                 window.location.href="/job/job_info/{{job_id}}";
             }
             else{
-                alert("更新失败");
+                alert(data);
             }
         }
     })

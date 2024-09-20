@@ -33,7 +33,7 @@ def index():
     complte_rate=get_overall_completion_rate(current_user.id, current_user.subject)
     leave_num=Attendance.query.join(Student).join(ClassStudent).join(ClassInfo).join(TeachingRelationship).filter(TeachingRelationship.teacher_id==current_user.id,Attendance.end_time>=datetime.date.today(),Attendance.start_time<=datetime.date.today()).filter(Attendance.status==1).count()   
     #筛选出我所任教的班级JobClass的avarage字段，最低的十个数据
-    jobs=JobClass.query.join(ClassInfo).join(TeachingRelationship).join(Job).filter(Job.id==JobClass.job_id,TeachingRelationship.teacher_id==current_user.id,TeachingRelationship.subject==current_user.subject,Job.subject==current_user.subject).order_by(JobClass.average/Job.total1*100).limit(10).all()    
+    jobs=JobClass.query.join(ClassInfo).join(TeachingRelationship).join(Job).filter(Job.id==JobClass.job_id,TeachingRelationship.teacher_id==current_user.id,TeachingRelationship.subject==current_user.subject,Job.subject==current_user.subject,JobClass.average!=0).order_by(JobClass.average/Job.total1*100).limit(10).all()    
     return(render_template("index.html",classes_num=classes_num,jobs_num=jobs_num,start_time=start_time,end_time=end_time,rank_rate=avg_score*100,finish_rate=complte_rate,leave_num=leave_num,jobs=jobs))
 @main.route("/student/<id>/", methods=["POST", "GET"])
 @login_required
@@ -107,22 +107,21 @@ def get_overall_completion_rate(user_id, subject):
         for class_info in classes:
             class_id = class_info.id
             student_count = len(class_info.students)
-
             # 查询该班级的所有作业提交人数
             query=db.session.query(func.sum(JobClass.submit_number)).join(Job).filter(
                 Job.subject == subject,
-                JobClass.class_id == class_id
+                JobClass.class_id == class_id,
+                JobClass.submit_number != None,
+                JobClass.submit_number != 0
+
             )
             total_submissions += query.scalar() or 0
             n=JobClass.query.join(Job).filter(JobClass.class_id==class_id,Job.subject==subject).count()
-            total_students += student_count*n
-            
-        
+            total_students += student_count*n        
         if total_students > 0:
             overall_completion_rate = (total_submissions / total_students) * 100
         else:
             overall_completion_rate = 0
-
         return overall_completion_rate
     except SQLAlchemyError as e:
         print(f"Error occurred while querying completion rates: {e}")
@@ -138,7 +137,9 @@ def get_teacher_subject_avg_score(user_id, subject):
         # 查询这些班级的作业，并计算平均分
         avg_score = db.session.query(func.avg(JobClass.average/Job.total1)).join(Job).filter(
             Job.subject == subject,
-            JobClass.class_id.in_(class_ids)
+            JobClass.class_id.in_(class_ids),
+            
+            JobClass.average != 0
         ).scalar()
 
         return avg_score

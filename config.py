@@ -1,7 +1,6 @@
 import os
 basedir = os.path.abspath(os.path.dirname(__file__))
 
-
 class Config:
     SECRET_KEY = 'you will never know the key'
     MAIL_SERVER = 'smtp.qq.com'

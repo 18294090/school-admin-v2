@@ -38,6 +38,7 @@
   </div>
 </div>
 <script src="/static/build/js/jquery.min.js"></script>
+<script src="/static/build/js/opencv.js"></script>
 <script>
 var video = document.querySelector('video');
 var select = document.querySelector('#videoSource');
@@ -58,8 +59,8 @@ function startStream() {
   var constraints = {
     video: {
       deviceId: select.value,
-      width: { ideal: 3500 },
-      height: { ideal: 2800 }
+      width: { ideal: 1920 },
+      height: { ideal: 1280 }
     },
     audio: false
   };
@@ -71,7 +72,7 @@ function startStream() {
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight; 
         console.log(video.videoHeight,video.videoWidth);    
-        intervalId = setInterval(createCaptureImageFunction({{id}}), 2000);      
+        intervalId = setInterval(createCaptureImageFunction({{id}}), 3000);      
       };
     })
     .catch(function(err) {

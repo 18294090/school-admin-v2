@@ -103,7 +103,9 @@ def import_student(file, class_id):
         number = str(df.at[i, "学号"]).zfill(10)
         number = number[:10]
         name = df.at[i, "姓名"]
-        sex = df.at[i, "性别"]
+        sex = None
+        if df.at[i, "性别"] in ["男","女"]:
+            sex = df.at[i, "性别"]
         total += 1
         username=str(current_user.id)+number
         student_ = User.query.filter(User.username == username).first()        
@@ -323,3 +325,14 @@ def join_class(class_id,subject_,user_id):
                     msg=f"{us.realname}已加入{class_.class_name}，无需重复操作"
     
     return(msg)
+
+@manage.route("/delete_student/",methods=["GET", "POST"])
+@login_required
+@permission_required(Permission.create_class)
+def delete_student():
+    if request.method=="POST":
+        id=request.form.get("id")
+        student=ClassStudent.query.filter(ClassStudent.student_id==id).first()
+        db.session.delete(student)
+        db.session.commit()
+        return("删除成功")

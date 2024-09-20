@@ -173,14 +173,13 @@ class Job(db.Model):
     question_paper = db.Column(db.String(64))
     subject = db.Column(db.String(64))
     context = db.Column(db.Text)
-    select_answer = db.Column(db.String(128))
+    select_answer = db.Column(db.String(256))
     complete = db.Column(db.String(64))
     paper_url = db.Column(db.String(64))
     answerCardStructure = db.Column(db.Text)
     multiple_choice_info = db.Column(db.Text)
     no_multiple_choice_info = db.Column(db.Text)
-    total1 = db.Column(db.Integer)
-    
+    total1 = db.Column(db.Integer)    
     job_classes = db.relationship("JobClass", back_populates="job", cascade="all, delete")
     job_details = db.relationship("JobDetail", back_populates="job", cascade="all, delete")
     job_students = db.relationship("JobStudent", back_populates="job", cascade="all, delete")
@@ -196,6 +195,8 @@ class AbnormalJob(db.Model):
     teacher_id = db.Column(db.Integer, ForeignKey("teachers.id"))
     teacher = db.relationship("Teacher", backref=db.backref("abnormal_jobs", lazy="dynamic"))
     process = db.Column(db.String(64))
+    time=db.Column(db.DateTime, default=datetime.utcnow())
+    number=db.Column(db.String(32))
 
 class JobClass(db.Model):
     __tablename__ = "job_classes"
@@ -209,7 +210,7 @@ class JobClass(db.Model):
     min = db.Column(db.Float(precision=2), default=0)
     submit_number = db.Column(db.Integer, default=0)
     std = db.Column(db.Float(precision=2), default=0)
-    date = db.Column(db.DateTime, default=datetime.utcnow)
+    date = db.Column(db.DateTime, default=datetime.utcnow())
 
 class JobDetail(db.Model):
     __tablename__ = "job_details"
