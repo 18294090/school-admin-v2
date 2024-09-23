@@ -475,7 +475,7 @@ def job_info(job_id):
             markline_opts=opts.MarkLineOpts(data=[opts.MarkLineItem(type_="average")]),
         )
         .set_global_opts(
-            title_opts=opts.TitleOpts(title="《{}》".format(job_.job_name)),
+           
             tooltip_opts=opts.TooltipOpts(trigger="axis"),
             xaxis_opts=opts.AxisOpts(axislabel_opts=opts.LabelOpts(rotate=-15)),
             yaxis_opts=opts.AxisOpts(min_=0, max_=sum_),
@@ -484,7 +484,7 @@ def job_info(job_id):
     
     js = {}
     answers_dict = {}
-    dict_ = {"A": 0, "B": 1, "C": 2, "D": 3}
+    dict_ = {"A": 0, "B": 1, "C": 2, "D": 3,"AB":4,"AC":5,"AD":6,"BC":7,"BD":8,"CD":9,"ABC":10,"ABD":11,"ACD":12,"BCD":13,"ABCD":14}
     for i in jobs:
         jt = JobDetail.query.filter(JobDetail.job_id == i.job_id, JobDetail.student_id == i.student_id)
         data = {
@@ -493,15 +493,18 @@ def job_info(job_id):
             "id": i.student.id
         }
         data1 = []
-
         for j in select_answer.keys():
             jt_ = jt.filter(JobDetail.serial_no == j).first()
             if jt_:
-                data[j] = jt_.answer
+                #对jt_.anser进行排序
+                t = "".join(sorted(jt_.answer))
+
+                data[j] = t
                 if jt_.mark is not None and jt_.mark >0:
+                    data1.append(15)
                     continue  # 正确答案，跳过相似度计算
                 else:
-                    data1.append(dict_[jt_.answer[0]])  # 错误答案，保留用于相似度计算
+                    data1.append(dict_[t])  # 错误答案，保留用于相似度计算
             else:
                 continue  # 没有回答，跳过相似度计算
 
@@ -520,7 +523,6 @@ def job_info(job_id):
         answers_dict[i.id] = data1
 
     df = pd.DataFrame.from_dict(answers_dict, orient='index')
-    
     heat = ""
     if mode == "1" and not df.empty:
         df2 = df.T
@@ -530,17 +532,19 @@ def job_info(job_id):
         y = []
         for i in range(len(similarity)):
             for j in range(i + 1, len(similarity)):
-                if similarity.iloc[i, j] >= 0.5:
-                    similar_pairs.append([i, j, similarity.iloc[i, j]])
-                    x.append(js[similarity.index[i]]["name"])
-                    y.append(js[similarity.columns[j]]["name"])
-        
+                if similarity.iloc[i, j] >= 0.59:
+                    
+                    if js[similarity.index[i]]["name"] not in x:
+                        x.append(js[similarity.index[i]]["name"])
+                    if js[similarity.columns[j]]["name"] not in y:
+                        y.append(js[similarity.columns[j]]["name"])
+                    similar_pairs.append([js[similarity.index[i]]["name"], js[similarity.columns[j]]["name"], similarity.iloc[i, j]])
         c = (
             HeatMap(init_opts=opts.InitOpts(width="100%", height="600px"))
             .add_xaxis(x)
             .add_yaxis("相似度", y, similar_pairs)
             .set_global_opts(
-                title_opts=opts.TitleOpts(title="《{}》学生答案相似度".format(job_.job_name)),
+                #title_opts=opts.TitleOpts(title="《{}》学生答案相似度".format(job_.job_name)),
                 visualmap_opts=opts.VisualMapOpts(max_=1, min_=0.9),
                 xaxis_opts=opts.AxisOpts(axislabel_opts=opts.LabelOpts(rotate=-15)),
             )
@@ -928,26 +932,34 @@ def GetCardFromCamera(id):
         return(jsonify(tag,img,msg))
     return(render_template("job/camera.html",id=id,name=job_.job_name))
 @job_manage.route("/detect_paper/",methods=["POST","GET"]) 
-@login_required
 def detect_paper():
     if request.method=="POST":
         #获取前端传来的图片
         img=request.get_json()["image"]
         id=request.get_json()["id"]
-        print(id)
+        job_=Job.query.filter(Job.id==id).first()
+        standard = judge.open_answer_card(os.path.join(os.getcwd(),"app","static","job","answerCard",str(id)+".png")) 
         img = re.sub('^data:image/.+;base64,', '', img)
         img=base64.b64decode(img)
         # base64解码后的图片数据转换为cv2图像
         img = Image.open(io.BytesIO(img))
         img_np = np.array(img)
         img = cv2.cvtColor(img_np, cv2.COLOR_RGB2BGR)
+        img=judge.paper_ajust(standard,img)
+        number=judge.number_pos(img)        
+        if number=="0":
+            return(jsonify(0,"没有找到学号"))
         url=os.path.join(os.getcwd(),"app","static","job","answer",id)
         if not os.path.exists(url):
             os.makedirs(url)
-        filename=str(time.time())+".png"
+        filename=str(number)+".png"
         #保存图片,文件名为时间戳
-        cv2.imwrite(os.path.join(url, filename), img)
-        return(jsonify("success"))
+        url=os.path.join(url, filename)
+        if  not os.path.exists(url):            
+            cv2.imwrite(url, img)
+            return(jsonify(job_.job_name ,number))
+        else:
+            return(jsonify(0,"重复上传"))
     return(render_template("job/detect_paper.html"))
 @job_manage.route("/judge/<id>",methods=["POST","GET"]) #阅卷主程序
 @login_required 
@@ -2179,7 +2191,7 @@ def student_important_job():
             JobStudent.submit_time.between(start, now)
         )
         .order_by(JobStudent.mark.asc())
-        .limit(10)
+        .limit(5)
         .all()
     )
     dicts=[]
@@ -2192,7 +2204,7 @@ def student_important_job():
         dict["complete_mark"]=student_job.complete_mark
         dict["rate"]=round(student_job.mark/student_job.job.total1*100,2)
         dicts.append(dict)
-    return dicts
+    return jsonify(dicts)
 
 @job_manage.route("/student_jobs_rate/",methods=["GET"])
 @login_required

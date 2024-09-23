@@ -1,106 +1,11 @@
 {% extends "base.html" %}
 {% block title %}<title>{{realname}}个人中心</title>{% endblock %}
+{%block style%}
+ 
+{% endblock %}
+
 {% block main %}
 <div class="container-fluid">
-    <div class="row">
-        <div class="col-md-3">
-            <div class="card card-shadow">
-                <div class="card-header">
-                    <div class="row align-items-between">
-                        <div class="col-md-6">
-                            <h3 class="card-title">请假统计</h3>
-                        </div>
-                        <div class="col-md-3"></div>
-                        <div class="col-md-3">
-                            <select class="form-select" id="attendance-select">
-                                <option selected value="7">近7天</option>
-                                <option value="14">近14天</option>
-                                <option value="30">近30天</option>
-                                <option value="3600">全部</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-body" id="attendance" style="width: 100%; height: 400px;"></div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card card-shadow">
-                <div class="card-header">
-                    <div class="row align-items-between">
-                        <div class="col-md-6">
-                            <h3 class="card-title">请假理由</h3>
-                        </div>
-                        <div class="col-md-3"></div>
-                        <div class="col-md-3">
-                            <select class="form-select" id="reason-select">
-                                <option selected value="7">近7天</option>
-                                <option value="14">近14天</option>
-                                <option value="30">近30天</option>
-                                <option value="3600">全部</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-body" id="reason" style="width: 100%; height: 400px;"></div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card card-shadow">
-                <div class="card-header">
-                    <div class="row align-items-between">
-                        <div class="col-md-6">
-                            <h3 class="card-title">重点关注的作业</h3>
-                        </div>
-                        <div class="col-md-3"></div>
-                        <div class="col-md-3">
-                            <select class="form-select" id="attention-select">
-                                <option selected value="7">近7天</option>
-                                <option value="14">近14天</option>
-                                <option value="30">近30天</option>
-                                <option value="3600">全部</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-body" id="important-job" style="width: 100%; height: 400px;">
-                    <table class="table table-striped" id="important-job-table">
-                        <thead>
-                            <tr>
-                                <th>作业名称</th>
-                                <th>学科</th>
-                                <th>提交时间</th>
-                                <th>选择题得分</th>
-                                <th>客观题得分</th>
-                                <th>得分率</th>
-                            </tr>
-                        </thead>
-                        <tbody id="important-job-tbody"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card card-shadow">
-                <div class="card-header">
-                    <h3 class="card-title">未交作业</h3>
-                </div>
-                <div class="card-body">
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>作业名称</th>
-                                <th>学科</th>
-                                <th>提交</th>
-                            </tr>
-                        </thead>
-                        <tbody id="unfinished-job"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-    <br>
     <div class="row">
         <div class="col-md-9">
             <div class="card card-shadow">
@@ -135,6 +40,63 @@
                     </div>
                 </div>
                 <div class="card-body" id="compare" style="width: 100%; height: 400px;"></div>
+            </div>
+        </div>
+    </div>
+    <br>
+    <div class="row"> 
+        <div class="col-md-6">
+            <div class="card card-shadow">
+                <div class="card-header">
+                    <div class="row align-items-between">
+                        <div class="col-md-6">
+                            <h3 class="card-title">重点关注的作业</h3>
+                        </div>
+                        <div class="col-md-3"></div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="attention-select">
+                                <option selected value="7">近7天</option>
+                                <option value="14">近14天</option>
+                                <option value="30">近30天</option>
+                                <option value="3600">全部</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body" id="important-job" style="width: 100%; height: 400px;">
+                    <table class="table table-striped" id="important-job-table">
+                        <thead>
+                            <tr>
+                                <th>作业名称</th>
+                                <th>学科</th>
+                                <th>提交时间</th>
+                                <th>选择题</th>
+                                <th>客观题</th>
+                                <th>得分率</th>
+                            </tr>
+                        </thead>
+                        <tbody id="important-job-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card card-shadow">
+                <div class="card-header">
+                    <h3 class="card-title">未交作业</h3>
+                </div>
+                <div class="card-body">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>作业名称</th>
+                                <th>学科</th>
+                                <th>提交</th>
+                            </tr>
+                        </thead>
+                        <tbody id="unfinished-job"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -181,6 +143,53 @@
             </div>
         </div>
     </div>
+    <br>
+        <div class="row">
+        <div class="col-md-6">
+            <div class="card card-shadow">
+                <div class="card-header">
+                    <div class="row align-items-between">
+                        <div class="col-md-6">
+                            <h3 class="card-title">请假统计</h3>
+                        </div>
+                        <div class="col-md-3"></div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="attendance-select">
+                                <option selected value="7">近7天</option>
+                                <option value="14">近14天</option>
+                                <option value="30">近30天</option>
+                                <option value="3600">全部</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body" id="attendance" style="width: 100%; height: 400px;"></div>
+            </div>
+        </div>
+    
+        <div class="col-md-6">
+            <div class="card card-shadow">
+                <div class="card-header">
+                    <div class="row align-items-between">
+                        <div class="col-md-6">
+                            <h3 class="card-title">请假理由</h3>
+                        </div>
+                        <div class="col-md-3"></div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="reason-select">
+                                <option selected value="7">近7天</option>
+                                <option value="14">近14天</option>
+                                <option value="30">近30天</option>
+                                <option value="3600">全部</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body" id="reason" style="width: 100%; height: 400px;"></div>
+            </div>
+        </div>
+    </div>
+    <br>
 </div>
 <script src="/static/build/js/jquery.min.js"></script>
 <script src="/static/build/js/echarts.min.js"></script>
@@ -358,7 +367,6 @@ function get_unfinished_job(days) {
                 alert("服务器返回的数据data为空");
                 return;
             }
-            //将前端返回的柱形图数据渲染到id 为rate的card-body中
            $.each(data.data,function(index,item){
                 if (item === null) {
                     alert("服务器返回的数据data中有空对象");
@@ -371,6 +379,7 @@ function get_unfinished_job(days) {
                 button2.addClass("btn btn-primary btn-sm");
                 button2.attr("onclick", "window.location.href='/job/GetCardFromCamera/" + item.id + "'");
                 row.append($("<td></td>").append(button2));
+                //给unfinished-job添加滚动条
                 $("#unfinished-job").append(row);
            })
             hideLoadingIndicator("#unfinished-job");
