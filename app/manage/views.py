@@ -201,7 +201,7 @@ def student_info(id):
         sub.append("全部")
         tl=TeachingRelationship.query.filter(TeachingRelationship.class_id==id)
         for i in tl:
-            if i not in sub and i.subject!='班主任':
+            if i.subject not in sub and i.subject!='班主任':
                 sub.append(i.subject)
     else:
         sub.append(current_user.subject)

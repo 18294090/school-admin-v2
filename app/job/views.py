@@ -506,6 +506,7 @@ def job_info(job_id):
                 else:
                     data1.append(dict_[t])  # 错误答案，保留用于相似度计算
             else:
+                data1.append(15)
                 continue  # 没有回答，跳过相似度计算
 
         for j in no_select_infor.keys():
@@ -532,7 +533,7 @@ def job_info(job_id):
         y = []
         for i in range(len(similarity)):
             for j in range(i + 1, len(similarity)):
-                if similarity.iloc[i, j] >= 0.59:
+                if similarity.iloc[i, j] >= 0.65:
                     
                     if js[similarity.index[i]]["name"] not in x:
                         x.append(js[similarity.index[i]]["name"])
@@ -1512,7 +1513,7 @@ def class_job_comparision(start,end,job_name):
         .add_yaxis("得分率", avg_scores)
         .add_yaxis("完成率", completion_rates)
         .add_yaxis("标准差", std_devs)
-        .set_global_opts(title_opts=opts.TitleOpts(title="班级作业对比")) 
+        #.set_global_opts(title_opts=opts.TitleOpts(title="班级作业对比")) 
         #x轴的数据旋转角度
     )
     return bar.render_embed()
@@ -2310,7 +2311,7 @@ def multiple_choice_judge(answer_card,job_id):#选择题阅卷
     mark={}
     job_=db.session.query(Job).filter(Job.id==job_id).first()
     if job_:       
-        structrued=json.loads(job_.answerCardStructure)
+        
         multiple_choice_info=json.loads(job_.multiple_choice_info)
         answer=json.loads(job_.select_answer)
         tag=json.loads(job_.context)

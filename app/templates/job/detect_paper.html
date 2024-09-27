@@ -40,8 +40,8 @@
         </div>
         <div class="card-body">
             <div class="position-relative">
-                <video id="video" width="2200" height="1600" autoplay playsinline willReadFrequently="true"></video>
-                <canvas id="canvasOutput" width="640" height="480" willReadFrequently="true"></canvas>
+                <video id="video" width="2000" height="1500" autoplay playsinline willReadFrequently="true"></video>
+                <canvas id="canvasOutput" width="1600" height="1200" willReadFrequently="true"></canvas>
             </div>  
         </div>
     </div> 
@@ -138,7 +138,7 @@
             let flag = false;  
             let code = null;
             let currentTime = Date.now();
-            if (currentTime - lastTime < 1000 / 30) {  // 限制为每秒30帧
+            if (currentTime - lastTime < 1000 / 20) {  // 限制为每秒30帧
                 return;
             }
             lastTime = currentTime;    
@@ -229,7 +229,10 @@
                         if (roi.cols > roi.rows) {
                             cv.transpose(roi, roi);
                             cv.flip(roi, roi, 1);
-                        }             
+                        }  
+                        let alpha = 1.1; // 对比度控制 (1.0-3.0)
+                        let beta = 10;  // 亮度控制 (0-100)
+                        roi.convertTo(roi, -1, alpha, beta);           
                         code = get_qr(roi);
                         cv.imshow('result', roi);
                         roi.delete();
@@ -262,8 +265,14 @@
                 audio.play();
                 // 暂停三秒钟
                 setTimeout(() => {
+                     let resultCanvas = document.getElementById('result');
+                let resultContext = resultCanvas.getContext('2d');
+                resultContext.clearRect(0, 0, resultCanvas.width, resultCanvas.height);
                     requestAnimationFrame(processVideo);
                 }, 3000);
+                //清空画布
+               
+                
                 
             } else {
                 prompt.innerHTML="没有识别到试卷";

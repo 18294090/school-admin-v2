@@ -149,7 +149,7 @@ def personal_attendance():
     bar.add_xaxis(["离校","跑操请假","体育课请假"])
     bar.add_yaxis("已同意", dict["已同意"],stack="stack1")
     bar.add_yaxis("被拒绝", dict["未通过"],stack="stack1")
-    bar.set_global_opts(title_opts=opts.TitleOpts(title="个人请假统计"))
+    #bar.set_global_opts(title_opts=opts.TitleOpts(title="个人请假统计"))
     bar.set_series_opts(label_opts=opts.LabelOpts(is_show=False))
     bar = bar.render_embed()
     return bar

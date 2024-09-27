@@ -71,9 +71,9 @@ def pict(gray):  # 图像处理，二值化
     thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 73, 2)
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
     thresh=cv2.erode(thresh,kernel,iterations=3)
-    thresh=cv2.dilate(thresh,kernel,iterations=4)
-    binary_erosion =cv2.erode(thresh, kernel,iterations=5)#腐蚀
-    binary_dilation =cv2.dilate(binary_erosion, kernel,iterations=5) #膨胀   
+    thresh=cv2.dilate(thresh,kernel,iterations=3)
+    binary_erosion =cv2.erode(thresh, kernel,iterations=4)#腐蚀
+    binary_dilation =cv2.dilate(binary_erosion, kernel,iterations=4) #膨胀   
     return(binary_dilation)
  
 def paper_ajust(original_image, target_image):
@@ -205,14 +205,7 @@ def check_select(dst,m): #选择题阅卷，返回一个字典，{题目序号�
         s=(col%15-2)//3
         if s<0:
             continue
-            if order in pnt:
-                if ans[0] in pnt[order]:
-                    print("第%s选项已存在%s" %(order,ans[0]))
-                    pass
-                else:
-                    pnt[order]+=ans[0]
-            else:
-                pnt[order]=ans[0]
+            
         elif s<=3:
             if order in pnt:
                 if ans[s] in pnt[order]:
