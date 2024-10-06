@@ -263,12 +263,16 @@ function get_important_job(days) {
             // 填充表格新数据
                     $.each(data,function(index,item){          
                         var row = $("<tr></tr>");
-                        row.append($("<td></td>").text(item.name));
+                        
+                        var link=$("<a></a>").attr("href","/job/show_student_card/"+item.id+"_"+{{user_id}}).text(item.name);
+                        row.append($("<td></td>").append(link));
                         row.append($("<td></td>").text(item.subject));
                         row.append($("<td></td>").text(item.submit_time));
                         row.append($("<td></td>").text(item.select_mark));
                         row.append($("<td></td>").text(item.complete_mark));
                         row.append($("<td></td>").text(item.rate));
+                        
+
                         $("#important-job-tbody").append(row);
                     });
             hideLoadingIndicator("#important-job");
@@ -333,7 +337,8 @@ function get_jobs(subject) {
             //将前端返回的柱形图数据渲染到id 为rate的card-body中
             $.each(data.data,function(index,item){
                 var row = $("<tr></tr>");
-                row.append($("<td></td>").text(item.name));
+                var link=$("<a></a>").attr("href","/job/show_student_card/"+item.id+"_"+{{user_id}}).text(item.name);
+                row.append($("<td></td>").append(link));
                 row.append($("<td></td>").text(item.subject));
                 row.append($("<td></td>").text(item.submit_time));
                 row.append($("<td></td>").text(item.select_mark));

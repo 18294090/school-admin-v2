@@ -628,12 +628,22 @@ def show_student_card(id_number):
                             cv2.putText(img,answers[j][0],((j-i["初始题号"])%4*15*n+6*n,(posi['start']+(j-i["初始题号"])//4*2)*n+n),cv2.FONT_HERSHEY_SIMPLEX,1,(0,255,0),2)
                         else:
                             cv2.putText(img,answers[j][0],((j-i["初始题号"])%4*15*n+6*n,(posi['start']+(j-i["初始题号"])//4*2)*n+n),cv2.FONT_HERSHEY_SIMPLEX,1,(0,0,255),2)
-                        
+            #将主观题得分写到试卷上
+            non_multiple_choice_info=json.loads(job_.no_multiple_choice_info)
+            for i in non_multiple_choice_info:
+                
+                posi=non_multiple_choice_info[i]["位置"]
+                print(posi)
+                score=JobDetail.query.filter(JobDetail.job_id==job_id,JobDetail.student_id==stu_id,JobDetail.serial_no==i).first().mark           
+                cv2.putText(img,str(score),(66*n,posi['start']*n+3*n),cv2.FONT_HERSHEY_SIMPLEX,2,(0,0,255),2)
             #将图片转换为base64编码
+            score=JobStudent.query.filter(JobStudent.job_id==job_id,JobStudent.student_id==stu_id).first().mark
+            cv2.putText(img,str(score),(66*n,13*n),cv2.FONT_HERSHEY_SIMPLEX,3,(0,0,255),4)
             img=cv2.imencode('.png',img)[1]
             base64_str = base64.b64encode(img)
             return (render_template("job/show_student_card.html",student_card=base64_str.decode(),answers=answers,number=num,job_id=job_id))
         except Exception as e:
+            print(e)
             return(render_template("404.html",errors= "打开试卷错误，请检查"))
     else:
         return(render_template("404.html",errors="找不到答题卡，请联系管理员"))
@@ -1043,7 +1053,7 @@ def job_judge(id):
                 path2=os.path.join(path1,str(number)+".png")                  
                 os.rename(file,path2)
             #生成非选择题阅卷信息
-            non_multiple_choice_to_read(number,id)
+            non_multiple_choice_to_read(stu_id,id)
     update_ClassInfo(id)
     db.session.commit()
     return(jsonify("成功阅卷%s份" %n))
@@ -1107,6 +1117,7 @@ def cpl_judge():
             else:
                 stu=Student.query.filter(Student.number==stu).first()
             if stu:
+                number=stu.number
             #找出job_detail的 job_id==id,serial_no==title_number的记录中，student like stu或者 stu.realname like stu的记录
                 j_detail=JobDetail.query.join(Student).join(ClassStudent).join(ClassInfo).join(TeachingRelationship)\
                     .filter(JobDetail.job_id==id)\
@@ -1119,7 +1130,7 @@ def cpl_judge():
                     .filter(Student.id==stu.id)\
                     .first()        
         if j_detail:            
-            paper =os.path.join(os.getcwd(),"app","static","job","job_readed",str(id),str(j_detail.student_id)+".png")            
+            paper =os.path.join(os.getcwd(),"app","static","job","job_readed",str(id),number+".png")            
             if os.path.exists(paper):
                 answer_card=os.path.join(os.getcwd(),"app","static","job","answerCard",j.paper_url)                
                 img=judge.open_answer_card(answer_card)
@@ -1137,7 +1148,7 @@ def cpl_judge():
                 response['Content-Type'] = 'image/png'
                 return jsonify(response)
             else:
-                paper1=os.path.join(os.getcwd(),"app","static","job","abnormal_paper",str(id),j_detail.student_id+".png")
+                paper1=os.path.join(os.getcwd(),"app","static","job","abnormal_paper",str(id),number+".png")
                 if os.path.exists(paper1):
                     img=judge.open(os.path.join(os.getcwd(),"app","static","job","paper","excercise",j.paper_url))
                     ep =judge.open2(paper1)
@@ -1176,11 +1187,14 @@ def set_cpl_mark():
         mark=request.json["mark"]
         #serial_no=request.json["title_number"]       
         j_t=JobDetail.query.filter(JobDetail.id==id).first()        
-        if j_t:
+        if j_t:            
             job_stu=JobStudent.query.filter(JobStudent.job_id==j_t.job_id,JobStudent.student_id==j_t.student_id).first()
             if job_stu:
                 if job_stu.complete_mark:
-                    job_stu.complete_mark=job_stu.complete_mark-j_t.mark+mark
+                    if j_t.mark:
+                        job_stu.complete_mark=job_stu.complete_mark-j_t.mark+mark
+                    else:
+                        job_stu.complete_mark=job_stu.complete_mark+mark
                 else:
                     job_stu.complete_mark=mark
             else:
@@ -2198,6 +2212,7 @@ def student_important_job():
     dicts=[]
     for student_job in student_jobs:
         dict={}
+        dict["id"]=student_job.job.id
         dict["name"]=student_job.job.job_name
         dict["subject"]=student_job.job.subject
         dict["submit_time"]= student_job.submit_time.strftime("%Y-%m-%d %H:%M:%S"),
@@ -2270,7 +2285,7 @@ def student_jobs():
     dicts=[]
     for student_job in student_jobs:
         dict={}
-        dict["id"]=student_job.id
+        dict["id"]=student_job.job_id
         dict["name"]=student_job.job.job_name
         dict["subject"]=student_job.job.subject
         dict["submit_time"]= student_job.submit_time.strftime("%Y-%m-%d %H:%M:%S"),

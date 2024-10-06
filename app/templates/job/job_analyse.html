@@ -2,8 +2,7 @@
 {%block title%}<title>作业分析</title>{%endblock%}
 {%block main%}
 <link rel="stylesheet" href={{url_for("static",filename="bootstrap-icons-1.10.5/font/bootstrap-icons.css")}}>
-<div class="container-fluid">
-    
+<div class="container-fluid">    
     <div class="row">
         <div class="col-md-8">
             <div class="card shadow">
@@ -23,11 +22,9 @@
         </div>
         <div class="col-md-4">
             <div class="card shadow">
-                <div class="card-body">
-                    
+                <div class="card-body">                    
                         <label for="job_name" class="form-label">请输入作业名称</label>
-                        <input type="text" id="job_name" class="form-control">
-                   
+                        <input type="text" id="job_name" class="form-control">                   
                 </div>
             </div>
         </div>
@@ -100,7 +97,7 @@
         let csrf_token = "{{ csrf_token() }}";
         $.ajax({
             type: 'POST',
-            url: '/job/get_pie',
+            url: '/job/get_pie/',
             headers: {
                 'X-CSRFToken': csrf_token
             },

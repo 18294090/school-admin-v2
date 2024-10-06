@@ -33,12 +33,10 @@ def qr_recognize(pic,pos):
     global n
     if len(pic.shape)!=2:
         pic = cv2.cvtColor(pic, cv2.COLOR_BGR2GRAY)    
-    pic=pic[pos[0]:pos[1],pos[2]:pos[3]]
-    
+    pic=pic[pos[0]:pos[1],pos[2]:pos[3]]    
     #图像处理，提高二维码识别准确率
     if pic.dtype != np.uint8:
-        pic = pic.astype(np.uint8)
-    
+        pic = pic.astype(np.uint8)    
     # 去除噪点
     pic = cv2.medianBlur(pic, 3)
     # 二值化处理
@@ -71,9 +69,9 @@ def pict(gray):  # 图像处理，二值化
     thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 73, 2)
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
     thresh=cv2.erode(thresh,kernel,iterations=3)
-    thresh=cv2.dilate(thresh,kernel,iterations=3)
-    binary_erosion =cv2.erode(thresh, kernel,iterations=4)#腐蚀
-    binary_dilation =cv2.dilate(binary_erosion, kernel,iterations=4) #膨胀   
+    thresh=cv2.dilate(thresh,kernel,iterations=4)
+    binary_erosion =cv2.erode(thresh, kernel,iterations=5)#腐蚀
+    binary_dilation =cv2.dilate(binary_erosion, kernel,iterations=5) #膨胀   
     return(binary_dilation)
  
 def paper_ajust(original_image, target_image):
